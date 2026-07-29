@@ -1,0 +1,48 @@
+# ---- OS / Editor ----
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ---- Node ----
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm/
+
+# ---- Env / secrets ----
+.env
+.env.local
+.env.*.local
+backend/.env
+frontend/.env
+backend/serviceAccountKey.json
+frontend/google-services.json
+frontend/GoogleService-Info.plist
+*.pem
+*.key
+
+# ---- Build artifacts ----
+dist/
+build/
+.cache/
+.expo/
+.expo-shared/
+*.tsbuildinfo
+web-report/
+coverage/
+
+# ---- Logs ----
+logs/
+*.log
+
+# ---- Local DB / temp ----
+*.db
+*.sqlite
+tmp/
+
+# ---- Backend local storage driver data ----
+backend/.storage/

@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: igohms-config
+  namespace: igohms
+data:
+  NODE_ENV: production
+  PORT: "3000"
+  API_BASE_URL: https://api.igohms.example.in
+  STORAGE_LOCAL_ROOT: /data/storage

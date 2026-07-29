@@ -1,0 +1,15 @@
+{
+  "name": "igohms",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Maharashtra Integrated Old Age Home Management System",
+  "scripts": {
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "build:backend": "npm --prefix backend run build",
+    "seed": "npm --prefix backend run seed",
+    "typecheck": "npm --prefix backend run typecheck && npm --prefix frontend run typecheck",
+    "lint": "npm --prefix backend run lint && npm --prefix frontend run lint",
+    "test": "npm --prefix backend test"
+  }
+}

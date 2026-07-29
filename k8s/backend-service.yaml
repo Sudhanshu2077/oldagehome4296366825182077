@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: igohms-backend
+  namespace: igohms
+spec:
+  selector:
+    app: igohms-backend
+  ports:
+    - port: 80
+      targetPort: 3000

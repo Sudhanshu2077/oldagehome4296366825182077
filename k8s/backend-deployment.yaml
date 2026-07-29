@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: igohms-backend
+  namespace: igohms
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: igohms-backend
+  template:
+    metadata:
+      labels:
+        app: igohms-backend
+    spec:
+      containers:
+        - name: backend
+          image: ghcr.io/example/igohms-backend:latest
+          ports:
+            - containerPort: 3000
+          envFrom:
+            - configMapRef:
+                name: igohms-config
+            - secretRef:
+                name: igohms-secrets
+          resources:
+            requests:
+              memory: 256Mi
+              cpu: 250m
+            limits:
+              memory: 1Gi
+              cpu: 1000m
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000

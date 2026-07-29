@@ -1,0 +1,57 @@
+# Old Age Home Management App 
+---
+## Role & ground rules
+
+You're joining as engineering partner on a real client project. My client is building this app to eventually sell to a government body, so it needs real precision — clean data model, no shortcuts, everything testable and provable at every stage. Please treat it that way throughout.
+
+**Do not write any code yet.** For now, only read this brief, ask me clarifying questions, and then propose an implementation plan. Wait for my explicit go-ahead before starting each step of that plan.
+
+## What we're building
+
+An old age home management app, used by admins and owners of individual old age homes to replace paper record-keeping. Each old age home is its own account/tenant — an admin registers their home, and from there manages their own staff, residents, and **13 registers** of records.
+
+Two of the registers are: donation records, and admission records.
+
+I WILL PROVIDE U THE LAYOUT OF ALL 13 REGISTER LATER ON SO HOLD ON TILL THAT
+
+The end users are not developers, and many won't be especially tech-savvy — the UI needs to be as simple and guided as possible. This will eventually run in production for a real government client, with real elderly residents' and staff's data in it, so treat data integrity and access control as first-class concerns, not afterthoughts. As part of your clarifying questions, please also raise anything around role-based permissions (e.g. can staff edit a register or only view it?) and audit trails (who changed what, when) — I want your recommendation before we decide whether to build that in now or later.
+
+## Tech stack (fixed — please stick to this)
+
+- **Backend:** Node.js
+- **Frontend:** React Native — one shared codebase that runs in the browser now (for fast local testing) and compiles to native iOS/Android apps later, without a rewrite
+- **Database:** MongoDB Atlas (cloud-hosted MongoDB)
+- **Auth:** Firebase, with two separate sign-up/login paths — user's choice at signup:
+  1. Google Sign-In
+  2. Email + password, with email verification via a one-time password (OTP), plus reCAPTCHA on the signup form
+- **Real-time:** Socket.io (or an equivalent you recommend) for live updates — e.g. if one staff member updates a register, others viewing it should see the change without refreshing
+- **Repo layout:** two top-level folders, `/frontend` and `/backend`, kept fully separate so I can edit one without touching the other
+- No Demo app or fields to be made, no demo stuff.
+## Environment for now
+
+We're only running on localhost for development and testing — no deployment yet. I want to be able to test what you've just built locally after every step before we move on. Cloud deployment is a later phase; don't build deployment config yet unless it's trivial to leave in.
+
+## Registration & auth details
+
+When an admin registers a new old age home, capture:
+- Full details about the old age home itself (name, address, capacity, etc. — use your judgement on what's needed, but ask if unsure)
+- Info about the manager
+- Info about the staff working there
+- Info about the owner
+
+Both auth paths (Google Sign-In and email/OTP) should lead into this same registration flow.
+
+## How I want us to work together
+
+1. First, ask me every clarifying question you have — tech, data model, feature scope, anything. I'd rather answer 5-10 questions now than rebuild something at step 12.
+2. Once you have enough, give me a numbered implementation plan, roughly 15–20 steps (Step 1, Step 2, Step 3...), covering the full build from empty repo to a working local version.
+3. I'll approve steps one at a time. When I say "go ahead with step N," build only that step.
+4. After finishing a step, tell me exactly how you verified it works — what you ran, what you tested, what "done" looks like — before I approve the next one. Write and run real tests/checks where it makes sense; don't just tell me it should work.
+5. Don't jump ahead to a step I haven't approved, even if it seems efficient.
+6. Once Step 1 is approved and built, generate an `AGENTS.md` file in the repo root — a persistent reference covering coding conventions, folder rules, and things not to touch, so we're not re-explaining the same constraints every session from here on.
+
+---
+
+## Strict Important Notice
+
+NOW SEE I DONT WANT U TO ONESHORT ALL MODULES, GO STEP BY STEP, THE 2 MAIN THINGS TO FOCUS ON IS BUILDING 2 MODULES AT A TIME, AND NOT LIMITING OR NOT MAKING ANY FEATURE/SCREEN IN SHORTCUT TO COMPLETE WORK IN YOUR TOKEN LIMIT, I WANT U TO MAKE 2 FEATURES/ MODULES AT A TIME AND CHECK FOR CONTEXT WINDO OR TOKEN USAGE IF IT HAS CAME NEAR TO 1 MILLION, COMPACT CONTEXT AND THEN START WITH OTHER MODULES, MAINLY NO SHORTCUT ALLOWED TO COMPLETE THINGS TO FIT IN TOKEN LIMIT, AND SEPARATE FRONTEND AND BACKEND FOLDERS WIRED NICELY, ALSO WILD FOCUS ON BUILDING THE APP.

@@ -1,0 +1,18 @@
+{
+  "expo": {
+    "name": "IGOHMS - Old Age Home Manager",
+    "slug": "igohms",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "scheme": "igohms",
+    "platforms": ["ios", "android", "web"],
+    "ios": { "supportsTablet": true, "bundleIdentifier": "gov.maharashtra.igohms" },
+    "android": { "package": "gov.maharashtra.igohms" },
+    "web": { "bundler": "metro", "output": "static" },
+    "plugins": ["expo-router", "expo-secure-store"],
+    "extra": {
+      "apiBaseUrl": "http://localhost:4000"
+    }
+  }
+}

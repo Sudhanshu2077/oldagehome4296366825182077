@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: igohms-frontend
+  namespace: igohms
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: igohms-frontend
+  template:
+    metadata:
+      labels:
+        app: igohms-frontend
+    spec:
+      containers:
+        - name: frontend
+          image: ghcr.io/example/igohms-frontend:latest
+          ports:
+            - containerPort: 80
+          envFrom:
+            - configMapRef:
+                name: igohms-config
+          resources:
+            requests:
+              memory: 128Mi
+              cpu: 100m
+            limits:
+              memory: 512Mi
+              cpu: 500m
