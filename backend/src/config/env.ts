@@ -46,6 +46,7 @@ export interface AppConfig {
   refreshTokenTtlDays: number;
   bruteForceMaxAttempts: number;
   bruteForceLockMs: number;
+  openRouterApiKey: string;
 }
 
 let cached: AppConfig | null = null;
@@ -80,6 +81,7 @@ export function loadConfig(): AppConfig {
     refreshTokenTtlDays: intEnv('REFRESH_TOKEN_TTL_DAYS', 30),
     bruteForceMaxAttempts: intEnv('BRUTE_FORCE_MAX_ATTEMPTS', 5),
     bruteForceLockMs: intEnv('BRUTE_FORCE_LOCK_MS', 15 * 60 * 1000),
+    openRouterApiKey: optional('OPENROUTER_API_KEY', ''),
   };
 
   return cached;

@@ -1,9 +1,13 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { model as getModel } from 'mongoose';
 import AIService from '../service/ai.service.js';
+import OpenRouterService, { type ChatMessage } from '../service/openrouter.service.js';
 import { ok } from '../../../kernel/response/api-response.js';
 import { ForbiddenError, ValidationError } from '../../../kernel/errors/app-error.js';
 import { resolvedTenantId } from '../../../plugins/tenant.plugin.js';
+import { getLogger } from '../../../config/logger.js';
+
+const logger = getLogger();
 import {
   isAIReportKind,
   isAIPredictKind,
@@ -114,7 +118,10 @@ const SEARCH_MODULES: { code: string; model: string; fields: string[] }[] = [
 ];
 
 export class AIController {
-  constructor(private readonly service: AIService = new AIService()) {}
+  constructor(
+    private readonly service: AIService = new AIService(),
+    private readonly llm: OpenRouterService = new OpenRouterService(),
+  ) {}
 
   register(app: FastifyInstance): void {
     const readGuard = [app.authenticate, app.requireTenantRead];
@@ -144,7 +151,7 @@ export class AIController {
     });
 
     app.post('/ai/ask', { preHandler: [app.authenticate] }, async (req: FastifyRequest, reply: FastifyReply) => {
-      const { query } = (req.body ?? {}) as { query?: string };
+      const { query, history } = (req.body ?? {}) as { query?: string; history?: { role: 'user' | 'assistant'; text: string }[] };
       if (!query || typeof query !== 'string') {
         reply.send(ok({ answer: 'Please provide a question.', results: [], intent: null }));
         return;
@@ -154,27 +161,69 @@ export class AIController {
       const tenantId = su.tier === 'government' ? null : resolvedTenantId(req);
 
       const intent = INTENTS.find((i) => i.patterns.some((p) => p.test(query)));
-      if (!intent) {
-        reply.send(
-          ok({
-            answer:
-              'I could not map that question to a report yet. Try: "residents admitted this month", "medicines expiring", "low stock", "pending complaints", "vacant beds", "pending inspections".',
-            results: [],
-            intent: null,
-          }),
-        );
-        return;
+      let contextBlock = '';
+      let results: Record<string, unknown>[] = [];
+      let intentModule: string | null = intent?.module ?? null;
+      let count = 0;
+      if (intent) {
+        try {
+          const Model = getModel(intent.module);
+          const filter = intent.buildFilter(query, tenantId);
+          const docs = await Model.find(filter).sort({ createdAt: -1 }).limit(25).lean();
+          results = docs.map((d) => ({ ...d, id: String((d as { _id: unknown })._id) }));
+          count = docs.length;
+          const sample = docs.slice(0, 10).map((d) => {
+            const r = d as Record<string, unknown>;
+            const entries = Object.entries(r)
+              .filter(([k]) => !['_id', '__v', 'tenantId', 'createdBy', 'updatedBy', 'deletedAt'].includes(k))
+              .map(([k, v]) => `${k}: ${typeof v === 'object' && v !== null ? '[object]' : String(v)}`)
+              .join(', ');
+            return `{ ${entries} }`;
+          });
+          contextBlock = `\n\nLive data retrieved from the system for "${intent.describe(query)}" (${count} total records, showing ${sample.length} samples):\n${sample.join('\n')}`;
+        } catch (err) {
+          logger.warn({ err: (err as Error).message }, 'ai intent fetch failed');
+        }
       }
 
-      const Model = getModel(intent.module);
-      const filter = intent.buildFilter(query, tenantId);
-      const docs = await Model.find(filter).sort({ createdAt: -1 }).limit(50).lean();
+      const systemPrompt = this.buildSystemPrompt(su, contextBlock, intent?.describe(query) ?? null);
+
+      const messages: ChatMessage[] = [{ role: 'system', content: systemPrompt }];
+      const prior = (history ?? []).slice(-6);
+      for (const m of prior) {
+        if (m && (m.role === 'user' || m.role === 'assistant') && m.text?.trim()) {
+          messages.push({ role: m.role, content: m.text });
+        }
+      }
+      messages.push({ role: 'user', content: query });
+
+      let answer = '';
+      let model = 'none';
+      if (this.llm.configured) {
+        const result = await this.llm.chat(messages, 0.3);
+        answer = result.content;
+        model = result.model;
+        if (!answer) {
+          logger.warn({ tried: result.tried.map((x) => `${x.model}:${x.ok ? 'ok' : x.reason}`) }, 'openrouter all free models failed; falling back to rule_answer');
+        }
+      }
+
+      if (!answer) {
+        if (intent) {
+          answer = `${intent.describe(query)} — ${count} record(s) found.${results.length > 0 ? ' Recent: ' + results.slice(0, 3).map((r) => String(r.fullName ?? r.name ?? r.donorName ?? r.subject ?? r.id)).join(', ') : ''}`;
+        } else {
+          answer =
+            'I could not reach the AI service right now. Try rephrasing, or ask: "residents admitted this month", "medicines expiring", "low stock", "pending complaints", "vacant beds", "pending inspections".';
+        }
+      }
+
       reply.send(
         ok({
-          answer: `${intent.describe(query)} — ${docs.length} record(s) found.`,
-          intent: intent.module,
-          count: docs.length,
-          results: docs.map((d) => ({ ...d, id: String(d._id) })),
+          answer,
+          intent: intentModule,
+          count: intent ? count : undefined,
+          results,
+          model,
         }),
       );
     });
@@ -206,6 +255,32 @@ export class AIController {
       }
       reply.send(ok({ results: out.slice(0, 25) }));
     });
+  }
+
+  private buildSystemPrompt(
+    su: { tier: string; role?: string; department?: string | null },
+    contextBlock: string,
+    intentLabel: string | null,
+  ): string {
+    const roleLabel = su.role ?? 'user';
+    const deptLabel = su.department ?? 'general';
+    const tier = su.tier === 'government' ? 'Government officer (read-only oversight)' : su.tier === 'external' ? 'External portal user' : 'Institution staff';
+    return [
+      'You are the AI assistant for IGOHMS — the Maharashtra Integrated Old Age Home Management System.',
+      'It is a government ERP managing old age homes: residents, admissions, medical/health, pharmacy, kitchen, inventory, finance (income, expense, vouchers, donations, budgets, bank/cash books), HR, payroll, compliance/licenses, audits, govt grants, complaints, emergencies, and 13 registers.',
+      'Architecture: multi-tenant (each Old Age Home is one isolated tenant). Government tier has cross-tenant read oversight within jurisdiction.',
+      `Current user: ${tier}, role="${roleLabel}", department="${deptLabel}".`,
+      'Guidelines:',
+      '- Answer in clear, concise English. Use short bullet points for lists.',
+      '- When live system data is provided, ground your answer strictly in that data; do NOT invent records, names, IDs, dates or amounts.',
+      '- For counts/totals, derive them from the provided data block; state the number clearly.',
+      '- Do not expose internal tenant IDs, JWTs or secrets. Do not reveal other tenants data.',
+      '- If the data block is empty for the relevant intent, say so plainly and suggest the relevant register to check.',
+      '- Keep answers practical for an old-age-home administrator: actions, summaries, risk flags.',
+      intentLabel ? `- This query matched the intent: "${intentLabel}".` : '- No specific report intent matched; answer generally using the app context and any provided data.',
+      'Be helpful, factual, and never speculate beyond provided data.',
+      contextBlock,
+    ].join('\n');
   }
 }
 

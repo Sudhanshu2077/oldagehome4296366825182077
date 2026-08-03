@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -10,13 +10,14 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
-import { Link, router } from 'expo-router';
+import { Link, router, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '../src/auth/AuthContext';
 import { errorMessage } from '../src/api/client';
 import { useTheme } from '../src/config/ThemeContext';
 import { useI18n } from '../src/i18n';
 import { spacing, radii } from '../src/config/theme';
 import { HeaderControls } from '../src/components/HeaderControls';
+import { PoliteModal } from '../src/components/PoliteModal';
 
 function GoogleLogo({ size = 18 }: { size?: number }) {
   const w = size;
@@ -35,11 +36,31 @@ export default function LoginScreen() {
   const { signInEmail, signInGoogle, signInDev } = useAuth();
   const { palette } = useTheme();
   const { t } = useI18n();
+  const params = useLocalSearchParams<{ registered?: string }>();
   const devMode = process.env.EXPO_PUBLIC_DEV_MODE === 'true';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showNotRegistered, setShowNotRegistered] = useState(false);
+  const [showRegistered, setShowRegistered] = useState(false);
+
+  useEffect(() => {
+    if (params.registered === '1') {
+      setShowRegistered(true);
+      router.setParams({});
+    }
+  }, [params.registered]);
+
+  function handleLoginError(err: unknown) {
+    const msg = errorMessage(err);
+    if (/not registered/i.test(msg)) {
+      setError(null);
+      setShowNotRegistered(true);
+      return;
+    }
+    setError(msg);
+  }
 
   async function handleEmailLogin() {
     if (!email || !password) {
@@ -52,7 +73,7 @@ export default function LoginScreen() {
       await signInEmail(email.trim(), password);
       router.replace('/(tabs)/dashboard');
     } catch (err) {
-      setError(errorMessage(err));
+      handleLoginError(err);
     } finally {
       setBusy(false);
     }
@@ -65,7 +86,7 @@ export default function LoginScreen() {
       await signInGoogle();
       router.replace('/(tabs)/dashboard');
     } catch (err) {
-      setError(errorMessage(err));
+      handleLoginError(err);
     } finally {
       setBusy(false);
     }
@@ -171,6 +192,28 @@ export default function LoginScreen() {
           </Link>
         </View>
       </ScrollView>
+
+      <PoliteModal
+        visible={showRegistered}
+        icon="✓"
+        title={t('login.registeredTitle')}
+        body={t('login.registeredBody')}
+        primaryLabel={t('common.ok')}
+        onPrimary={() => setShowRegistered(false)}
+      />
+      <PoliteModal
+        visible={showNotRegistered}
+        icon="🏛"
+        title={t('login.notRegisteredTitle')}
+        body={t('login.notRegisteredBody')}
+        primaryLabel={t('login.goToRegister')}
+        secondaryLabel={t('common.cancel')}
+        onPrimary={() => {
+          setShowNotRegistered(false);
+          router.push('/onboard');
+        }}
+        onSecondary={() => setShowNotRegistered(false)}
+      />
     </KeyboardAvoidingView>
   );
 }

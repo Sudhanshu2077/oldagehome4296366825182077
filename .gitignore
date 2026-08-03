@@ -38,6 +38,8 @@ coverage/
 # ---- Logs ----
 logs/
 *.log
+*.err
+*.pid
 
 # ---- Local DB / temp ----
 *.db

@@ -30,7 +30,7 @@ interface AuthState {
   signInEmail: (email: string, password: string) => Promise<void>;
   signInGoogle: () => Promise<void>;
   signInDev: (role?: string) => Promise<void>;
-  signUpEmail: (email: string, password: string) => Promise<string>;
+  signUpGoogle: () => Promise<string>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
@@ -123,10 +123,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
   }, []);
 
-  const signUpEmail = useCallback(async (email: string, password: string): Promise<string> => {
-    const { createUserWithEmailAndPassword } = await import('firebase/auth');
-    const cred = await createUserWithEmailAndPassword(getFirebaseAuth(), email, password);
-    return cred.user.getIdToken();
+  const signUpGoogle = useCallback(async (): Promise<string> => {
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
+    const authInst = getFirebaseAuth();
+    try {
+      const cred = await signInWithPopup(authInst, provider);
+      return await cred.user.getIdToken();
+    } catch (err) {
+      const authErr = err as AuthError;
+      if (authErr.code === 'auth/popup-blocked' || authErr.code === 'auth/popup-closed-by-user' || authErr.code === 'auth/cancelled-popup-request') {
+        await signInWithRedirect(authInst, provider);
+        return '';
+      }
+      throw err;
+    }
   }, []);
 
   const signInDev = useCallback(async (role = 'assistant-manager') => {
@@ -153,8 +164,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo<AuthState>(
-    () => ({ status, user, signInEmail, signInGoogle, signInDev, signUpEmail, signOut, refreshProfile }),
-    [status, user, signInEmail, signInGoogle, signInDev, signUpEmail, signOut, refreshProfile],
+    () => ({ status, user, signInEmail, signInGoogle, signInDev, signUpGoogle, signOut, refreshProfile }),
+    [status, user, signInEmail, signInGoogle, signInDev, signUpGoogle, signOut, refreshProfile],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

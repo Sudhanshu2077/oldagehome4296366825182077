@@ -33,7 +33,6 @@ const ALL_TABS: TabDef[] = [
   { name: 'donor', icon: 'gift', labelKey: 'tab.donor' },
   { name: 'volunteer', icon: 'thumbs-up', labelKey: 'tab.volunteer' },
   { name: 'profile', icon: 'user', labelKey: 'tab.profile' },
-  { name: 'settings', icon: 'settings', labelKey: 'tab.settings' },
 ];
 
 function isTabVisible(name: string, tier: string | undefined, role: string | undefined): boolean {
@@ -90,11 +89,15 @@ function VerticalSidebar() {
               activeOpacity={0.7}
               onPress={() => { if (!isFocused) router.push(`/${tab.name}`); }}
             >
-              <Feather
-                name={tab.icon as never}
-                size={20}
-                color={isFocused ? palette.primary : palette.textMuted}
-              />
+              {tab.name === 'finance' ? (
+                <Text style={{ fontSize: 20, fontWeight: '800', color: isFocused ? palette.primary : palette.textMuted, lineHeight: 24 }}>₹</Text>
+              ) : (
+                <Feather
+                  name={tab.icon as never}
+                  size={20}
+                  color={isFocused ? palette.primary : palette.textMuted}
+                />
+              )}
               <Text style={[styles.tabLabel, { color: isFocused ? palette.primary : palette.textMuted }]} numberOfLines={1}>{t(tab.labelKey)}</Text>
             </TouchableOpacity>
           );
@@ -151,7 +154,7 @@ export default function TabsLayout() {
             <Tabs.Screen name="health" options={{ title: t('tab.health') }} />
           ) : null}
           {user?.tier !== 'external' ? (
-            <Tabs.Screen name="finance" options={{ title: t('tab.finance') }} />
+            <Tabs.Screen name="finance" options={{ title: t('finance.titleNew') }} />
           ) : null}
           {user?.tier !== 'external' ? (
             <Tabs.Screen name="hr" options={{ title: t('tab.hr') }} />
@@ -172,7 +175,6 @@ export default function TabsLayout() {
             <Tabs.Screen name="volunteer" options={{ title: t('tab.volunteer') }} />
           ) : null}
           <Tabs.Screen name="profile" options={{ title: t('tab.profile') }} />
-          <Tabs.Screen name="settings" options={{ title: t('tab.settings') }} />
         </Tabs>
       </View>
     </View>

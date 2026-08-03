@@ -29,6 +29,7 @@ function NavShell() {
         <Stack.Screen name="onboard" />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="register/[id]" options={{ headerShown: true, title: 'Register' }} />
+        <Stack.Screen name="module/[code]" options={{ headerShown: true, title: 'Module' }} />
       </Stack>
       <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />
     </NavThemeProvider>

@@ -42,9 +42,12 @@ export default function AiScreen() {
     setMessages((prev) => [...prev, userMsg]);
     setLoading(true);
     try {
-      const res = await api.post('/ai/ask', { query: q });
-      const reply = (res.data as { data?: { answer?: string } }).data?.answer ?? 'No response';
-      setMessages((prev) => [...prev, { id: (Date.now() + 1).toString(), role: 'assistant', text: reply }]);
+      const history = messages.filter((m) => m.id !== 'welcome').map((m) => ({ role: m.role, text: m.text }));
+      const res = await api.post('/ai/ask', { query: q, history });
+      const data = (res.data as { data?: { answer?: string; model?: string; intent?: string | null; count?: number } }).data;
+      const reply = data?.answer ?? 'No response';
+      const meta = data?.model && data.model !== 'none' ? `\n\nvia ${String(data.model).split('/').pop()}` : '';
+      setMessages((prev) => [...prev, { id: (Date.now() + 1).toString(), role: 'assistant', text: reply + meta }]);
     } catch (err) {
       setMessages((prev) => [...prev, { id: (Date.now() + 1).toString(), role: 'assistant', text: 'Error: ' + errorMessage(err) }]);
     } finally {
