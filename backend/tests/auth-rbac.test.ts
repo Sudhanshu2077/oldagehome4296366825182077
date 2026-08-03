@@ -23,23 +23,6 @@ describe('auth and rbac', () => {
     await closeTestApp(app, server);
   });
 
-  it('dev-login issues a valid access token', async () => {
-    const res = await app.inject({
-      method: 'POST',
-      url: '/auth/dev-login',
-      payload: { role: 'assistant-manager' },
-    });
-    expect(res.statusCode).toBe(200);
-    const body = JSON.parse(res.payload) as {
-      success: boolean;
-      data: { accessToken: string; refreshToken: string; user: { role: string } };
-    };
-    expect(body.success).toBe(true);
-    expect(body.data.accessToken).toBeTruthy();
-    expect(body.data.refreshToken).toBeTruthy();
-    expect(body.data.user.role).toBe('assistant-manager');
-  });
-
   it('/auth/me returns the authenticated user profile', async () => {
     const session = await loginAs(app, 'assistant-manager');
     const res = await app.inject({
@@ -68,7 +51,7 @@ describe('auth and rbac', () => {
 
   it('department-user can write only assigned registers', async () => {
     const session = await loginAs(app, 'department-user');
-    // Dev-login assigns register write scopes R1, R6 and R7 to department users.
+    // loginAs assigns register write scopes R1, R6 and R7 to department users.
     const allowed = await app.inject({
       method: 'POST',
       url: '/registers/R1/entries',

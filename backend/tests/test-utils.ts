@@ -75,11 +75,15 @@ export async function loginAs(
   app: FastifyInstance,
   role: 'assistant-manager' | 'institution-head' | 'department-user',
 ): Promise<{ token: string; user: Record<string, unknown> }> {
-  const res = await app.inject({ method: 'POST', url: '/auth/dev-login', payload: { role } });
-  const body = JSON.parse(res.payload) as {
-    success: boolean;
-    data: { accessToken: string; user: Record<string, unknown> };
-  };
-  if (!body.success) throw new Error(`dev-login failed: ${res.payload}`);
-  return { token: body.data.accessToken, user: body.data.user };
+  const institution = await InstitutionModel.findOne({ code: 'DEV-HOME-001' }) ?? await createInstitution('Dev Demo Old Age Home', 'DEV-HOME-001');
+  const user = await createUser({
+    email: `dev-${role}@test.local`,
+    roleId: role,
+    tenantId: institution._id.toString(),
+    departmentCode: role === 'department-user' ? 'reception' : null,
+    grantedPermissions: role === 'institution-head' ? ['register:read:*'] : role === 'department-user' ? ['register:read:*'] : [],
+    registerWriteScopes: role === 'department-user' ? ['R1', 'R6', 'R7'] : [],
+  });
+  const token = signAccessToken(app, user._id.toString());
+  return { token, user: { tenantId: institution._id.toString(), role, tier: 'institution' } };
 }

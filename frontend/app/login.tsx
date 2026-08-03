@@ -33,11 +33,10 @@ function GoogleLogo({ size = 18 }: { size?: number }) {
 }
 
 export default function LoginScreen() {
-  const { signInEmail, signInGoogle, signInDev } = useAuth();
+  const { signInEmail, signInGoogle } = useAuth();
   const { palette } = useTheme();
   const { t } = useI18n();
   const params = useLocalSearchParams<{ registered?: string }>();
-  const devMode = process.env.EXPO_PUBLIC_DEV_MODE === 'true';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
@@ -87,19 +86,6 @@ export default function LoginScreen() {
       router.replace('/(tabs)/dashboard');
     } catch (err) {
       handleLoginError(err);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function handleDevLogin(role: string) {
-    setBusy(true);
-    setError(null);
-    try {
-      await signInDev(role);
-      router.replace('/(tabs)/dashboard');
-    } catch (err) {
-      setError(errorMessage(err));
     } finally {
       setBusy(false);
     }
@@ -160,27 +146,6 @@ export default function LoginScreen() {
               </View>
             </TouchableOpacity>
           ) : null}
-
-          <TouchableOpacity style={[styles.skipButton, { backgroundColor: palette.backgroundSoft, borderColor: palette.border }]} onPress={() => void handleDevLogin('institution-head')} disabled={busy} activeOpacity={0.8}>
-            {busy ? <ActivityIndicator color={palette.primary} /> : <Text style={[styles.skipButtonText, { color: palette.textMuted }]}>{t('login.skip')}</Text>}
-          </TouchableOpacity>
-
-          {devMode ? (
-            <View style={[styles.devBox, { backgroundColor: palette.secondary, borderColor: palette.primaryLight }]}>
-              <Text style={[styles.devTitle, { color: palette.primaryDark }]}>{t('login.demoTitle')}</Text>
-              <View style={styles.devRow}>
-                <TouchableOpacity style={[styles.devButton, { backgroundColor: palette.primaryDark }]} onPress={() => void handleDevLogin('assistant-manager')} disabled={busy}>
-                  <Text style={styles.devButtonText}>Manager</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={[styles.devButton, { backgroundColor: palette.primaryDark }]} onPress={() => void handleDevLogin('institution-head')} disabled={busy}>
-                  <Text style={styles.devButtonText}>Head</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={[styles.devButton, { backgroundColor: palette.primaryDark }]} onPress={() => void handleDevLogin('department-user')} disabled={busy}>
-                  <Text style={styles.devButtonText}>Staff</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          ) : null}
         </View>
 
         <View style={styles.linksWrap}>
@@ -238,13 +203,6 @@ const styles = StyleSheet.create({
   googleButton: { borderWidth: 1, borderRadius: radii.md, paddingVertical: spacing.md, alignItems: 'center', marginBottom: spacing.md, minHeight: 48 },
   googleBtnContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
   googleButtonText: { fontWeight: '600', fontSize: 15 },
-  skipButton: { borderWidth: 1, borderRadius: radii.md, paddingVertical: spacing.sm, alignItems: 'center', marginBottom: spacing.md, minHeight: 42 },
-  skipButtonText: { fontWeight: '500', fontSize: 13 },
   linksWrap: { marginTop: spacing.lg, gap: spacing.sm, alignItems: 'center' },
   link: { textAlign: 'center', fontSize: 13, fontWeight: '600' },
-  devBox: { borderWidth: 1, borderRadius: radii.md, padding: spacing.md, marginBottom: spacing.md },
-  devTitle: { fontSize: 12, fontWeight: '700', textAlign: 'center', marginBottom: spacing.sm },
-  devRow: { flexDirection: 'row', justifyContent: 'space-between', gap: spacing.sm },
-  devButton: { flex: 1, borderRadius: radii.sm, paddingVertical: spacing.sm, alignItems: 'center' },
-  devButtonText: { color: '#fff', fontWeight: '600', fontSize: 12 },
 });
