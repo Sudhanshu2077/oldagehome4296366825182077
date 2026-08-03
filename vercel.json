@@ -1,0 +1,8 @@
+{
+  "version": 2,
+  "buildCommand": "cd frontend && npx expo export -p web --output-dir ../dist",
+  "outputDirectory": "dist",
+  "framework": null,
+  "installCommand": "cd frontend && npm install",
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+}

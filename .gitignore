@@ -48,3 +48,6 @@ tmp/
 
 # ---- Backend local storage driver data ----
 backend/.storage/
+
+.vercel
+.env*
