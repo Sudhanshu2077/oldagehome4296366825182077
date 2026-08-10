@@ -9,7 +9,7 @@ export function setUnauthorizedHandler(handler: (() => void) | null): void {
 
 export const api: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 20000,
+  timeout: 90000,
 });
 
 api.interceptors.request.use(async (config) => {
