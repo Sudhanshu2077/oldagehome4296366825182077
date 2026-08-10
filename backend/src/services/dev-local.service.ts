@@ -1,6 +1,6 @@
-import { MongoMemoryServer } from 'mongodb-memory-server';
 import { getLogger } from '../config/logger.js';
 
+type MongoMemoryServer = { getUri(): string; stop(): Promise<void> };
 let memoryServer: MongoMemoryServer | null = null;
 
 export function isDevLocalMode(): boolean {
@@ -13,7 +13,8 @@ export async function startLocalMongoIfEnabled(): Promise<boolean> {
   const logger = getLogger();
   logger.warn('DEV_LOCAL_MODE enabled — starting in-memory MongoDB. NEVER enable this in production.');
 
-  memoryServer = await MongoMemoryServer.create({ instance: { dbName: 'igohms_dev' } });
+  const { MongoMemoryServer: T } = await import('mongodb-memory-server');
+  memoryServer = await T.create({ instance: { dbName: 'igohms_dev' } });
   const uri = memoryServer.getUri();
   process.env.MONGODB_URI = uri;
   logger.info({ uri }, 'in-memory mongo started');
