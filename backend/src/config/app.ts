@@ -34,15 +34,18 @@ export async function buildApp(): Promise<FastifyInstance> {
     genReqId: () => randomUUID(),
   });
 
-  await app.register(helmet, {
-    contentSecurityPolicy: cfg.nodeEnv === 'production',
-    hsts: cfg.nodeEnv === 'production',
-  });
-
   await app.register(cors, {
     origin: true,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  });
+
+  await app.register(helmet, {
+    contentSecurityPolicy: cfg.nodeEnv === 'production',
+    hsts: cfg.nodeEnv === 'production',
+    crossOriginOpenerPolicy: false,
+    crossOriginEmbedderPolicy: false,
+    crossOriginResourcePolicy: false,
   });
 
   await app.register(rateLimit, {
