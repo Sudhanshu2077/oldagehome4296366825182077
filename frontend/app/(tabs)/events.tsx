@@ -15,6 +15,18 @@ interface EventItem {
   photoUrl: string;
 }
 
+const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const HOURS = Array.from({ length: 12 }, (_, i) => i + 1);
+const MINUTES = Array.from({ length: 12 }, (_, i) => i * 5);
+
+function pad(n: number): string {
+  return String(n).padStart(2, '0');
+}
+
+function dayKey(d: Date): string {
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
 export default function EventsScreen() {
   const { palette } = useTheme();
   const { t, lang } = useI18n();
@@ -26,14 +38,24 @@ export default function EventsScreen() {
   const [form, setForm] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
+  const today = useMemo(() => new Date(), []);
+  const [viewMonth, setViewMonth] = useState(today.getFullYear());
+  const [viewYear, setViewYear] = useState(today.getFullYear());
+  const [selectedDate, setSelectedDate] = useState<Date>(today);
+  const [time, setTime] = useState({ hour: 9, minute: 0, period: 'AM' as 'AM' | 'PM' });
+
   const canCreate = user?.tier === 'institution' && (user?.role === 'institution-head' || user?.role === 'assistant-manager');
 
-  const FORM_FIELDS = [
-    { key: 'title', label: t('common.title'), required: true },
-    { key: 'titleMr', label: 'Title (Marathi)', required: false },
-    { key: 'description', label: t('common.description'), required: false },
-    { key: 'eventDate', label: t('events.eventDate'), required: true },
-  ];
+  const eventDateOnly = useMemo(() => {
+    const map = new Map<string, EventItem[]>();
+    for (const ev of items) {
+      const k = dayKey(new Date(ev.eventDate));
+      const list = map.get(k) ?? [];
+      list.push(ev);
+      map.set(k, list);
+    }
+    return map;
+  }, [items]);
 
   const styles = useMemo(() => StyleSheet.create({
     container: { flex: 1, backgroundColor: palette.background },
@@ -59,6 +81,35 @@ export default function EventsScreen() {
     cancelText: { color: palette.textMuted, fontWeight: '600' },
     saveButton: { backgroundColor: palette.primary, borderRadius: radii.sm, paddingHorizontal: spacing.xl, paddingVertical: spacing.md },
     saveText: { color: palette.textInverse, fontWeight: '600' },
+
+    calendarCard: { backgroundColor: palette.surface, borderRadius: radii.md, padding: spacing.md, marginBottom: spacing.md },
+    calNavRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.sm },
+    calNavBtn: { paddingHorizontal: spacing.lg, paddingVertical: spacing.xs, borderRadius: radii.sm, backgroundColor: palette.surfaceAlt },
+    calNavBtnText: { fontSize: 16, fontWeight: '700', color: palette.primaryDark },
+    calMonthLabel: { fontSize: 14, fontWeight: '700', color: palette.text },
+    weekdayRow: { flexDirection: 'row' },
+    weekdayCell: { flex: 1, alignItems: 'center', paddingVertical: spacing.xs },
+    weekdayLabel: { fontSize: 10, fontWeight: '600', color: palette.textMuted },
+    dayRow: { flexDirection: 'row' },
+    dayCell: { flex: 1, alignItems: 'center', justifyContent: 'center', height: 40, marginVertical: 1 },
+    dayCellBlank: { flex: 1 },
+    dayInner: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+    dayNumber: { fontSize: 13, color: palette.text },
+    dayNumberMuted: { fontSize: 13, color: palette.textMuted },
+    dayNumberToday: { fontSize: 13, fontWeight: '700', color: palette.textInverse },
+    daySelected: { backgroundColor: palette.primary },
+    dayToday: { backgroundColor: palette.secondary, borderWidth: 1, borderColor: palette.primaryLight },
+    eventDot: { width: 5, height: 5, borderRadius: 2.5, backgroundColor: palette.primary, marginTop: 2 },
+
+    selectedDayTitle: { fontSize: 13, fontWeight: '700', color: palette.text, marginBottom: spacing.sm, marginTop: spacing.sm },
+
+    timeSection: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: spacing.md },
+    timeColumn: { flex: 1 },
+    timePickerRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+    chip: { borderWidth: 1, borderColor: palette.border, borderRadius: radii.sm, paddingHorizontal: 12, paddingVertical: 6, minWidth: 44, alignItems: 'center' },
+    chipActive: { backgroundColor: palette.secondary, borderColor: palette.primaryLight },
+    chipText: { fontSize: 13, color: palette.text },
+    chipTextActive: { fontSize: 13, fontWeight: '700', color: palette.primary },
   }), [palette]);
 
   const load = useCallback(async () => {
@@ -77,16 +128,60 @@ export default function EventsScreen() {
     void load();
   }, [load]);
 
-  function openCreate() {
-    setForm({});
+  const selectedDayEvents = useMemo(() => {
+    const k = dayKey(selectedDate);
+    return eventDateOnly.get(k) ?? [];
+  }, [selectedDate, eventDateOnly]);
+
+  function openCreate(date: Date) {
+    setSelectedDate(date);
+    setForm({ title: '', titleMr: '', description: '' });
+    setTime({ hour: 9, minute: 0, period: 'AM' });
     setModalOpen(true);
   }
 
+  function prevMonth() {
+    if (viewMonth === 0) {
+      setViewMonth(11);
+      setViewYear(viewYear - 1);
+    } else {
+      setViewMonth(viewMonth - 1);
+    }
+  }
+
+  function nextMonth() {
+    if (viewMonth === 11) {
+      setViewMonth(0);
+      setViewYear(viewYear + 1);
+    } else {
+      setViewMonth(viewMonth + 1);
+    }
+  }
+
+  function buildDays(): (number | null)[] {
+    const first = new Date(viewYear, viewMonth, 1);
+    const startOffset = first.getDay();
+    const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+    const cells: (number | null)[] = [];
+    for (let i = 0; i < startOffset; i++) cells.push(null);
+    for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+    while (cells.length % 7 !== 0) cells.push(null);
+    return cells;
+  }
+
   async function save() {
+    if (!form.title?.trim()) {
+      setError('Title is required');
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
-      await api.post('/events', form);
+      const hour24 = time.period === 'PM'
+        ? (time.hour === 12 ? 12 : time.hour + 12)
+        : (time.hour === 12 ? 0 : time.hour);
+      const eventDate = `${viewYear}-${pad(viewMonth + 1)}-${pad(selectedDate.getDate())}T${pad(hour24)}:${pad(time.minute)}:00`;
+      await api.post('/events', { ...form, eventDate });
       setModalOpen(false);
       await load();
     } catch (err) {
@@ -96,24 +191,81 @@ export default function EventsScreen() {
     }
   }
 
+  const days = buildDays();
+  const weekRows: (number | null)[][] = [];
+  for (let i = 0; i < days.length; i += 7) weekRows.push(days.slice(i, i + 7));
+
+  const monthName = new Date(viewYear, viewMonth, 1).toLocaleString(lang === 'hi' ? 'hi-IN' : lang === 'mr' ? 'mr-IN' : 'en-IN', { month: 'long', year: 'numeric' });
+
   if (loading) return <View style={styles.center}><ActivityIndicator size="large" color={palette.primary} /></View>;
 
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
         <Text style={styles.screenTitle}>{t('events.title')}</Text>
-        {canCreate ? (
-          <TouchableOpacity style={styles.addButton} onPress={openCreate}>
-            <Text style={styles.addButtonText}>{t('events.new')}</Text>
-          </TouchableOpacity>
-        ) : null}
       </View>
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
+
       <FlatList
         contentContainerStyle={{ padding: spacing.md }}
-        data={items}
+        data={selectedDayEvents}
         keyExtractor={(i) => i.id}
+        ListHeaderComponent={
+          <View>
+            <View style={styles.calendarCard}>
+              <View style={styles.calNavRow}>
+                <TouchableOpacity style={styles.calNavBtn} onPress={prevMonth} activeOpacity={0.7}>
+                  <Text style={styles.calNavBtnText}>‹</Text>
+                </TouchableOpacity>
+                <Text style={styles.calMonthLabel}>{monthName}</Text>
+                <TouchableOpacity style={styles.calNavBtn} onPress={nextMonth} activeOpacity={0.7}>
+                  <Text style={styles.calNavBtnText}>›</Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.weekdayRow}>
+                {WEEKDAYS.map((w) => (
+                  <View key={w} style={styles.weekdayCell}>
+                    <Text style={styles.weekdayLabel}>{w}</Text>
+                  </View>
+                ))}
+              </View>
+
+              {weekRows.map((row, ri) => (
+                <View key={ri} style={styles.dayRow}>
+                  {row.map((day, ci) => {
+                    if (day === null) return <View key={ci} style={styles.dayCellBlank} />;
+                    const d = new Date(viewYear, viewMonth, day);
+                    const isToday = dayKey(d) === dayKey(today);
+                    const isSelected = dayKey(d) === dayKey(selectedDate);
+                    const hasEvents = eventDateOnly.has(dayKey(d));
+                    return (
+                      <TouchableOpacity
+                        key={ci}
+                        style={styles.dayCell}
+                        activeOpacity={0.7}
+                        onPress={() => {
+                          setSelectedDate(d);
+                          if (canCreate) openCreate(d);
+                        }}
+                      >
+                        <View style={[styles.dayInner, isSelected ? styles.daySelected : isToday ? styles.dayToday : null]}>
+                          <Text style={isSelected ? styles.dayNumberToday : isToday ? styles.dayNumberToday : styles.dayNumber}>{day}</Text>
+                        </View>
+                        <View style={[styles.eventDot, !hasEvents && { opacity: 0 }]} />
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              ))}
+            </View>
+
+            <Text style={styles.selectedDayTitle}>
+              {selectedDate.toLocaleDateString(lang === 'hi' ? 'hi-IN' : lang === 'mr' ? 'mr-IN' : 'en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+            </Text>
+          </View>
+        }
         ListEmptyComponent={<Text style={styles.empty}>{t('events.empty')}</Text>}
         renderItem={({ item }) => (
           <View style={styles.card}>
@@ -127,21 +279,80 @@ export default function EventsScreen() {
       <Modal visible={modalOpen} animationType="slide" transparent>
         <View style={styles.modalBackdrop}>
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>{t('events.title')}</Text>
-            <ScrollView style={{ maxHeight: 420 }}>
-              {FORM_FIELDS.map((f) => (
-                <View key={f.key} style={{ marginBottom: spacing.md }}>
-                  <Text style={styles.fieldLabel}>{f.label}{f.required ? ' *' : ''}</Text>
-                  <TextInput
-                    style={[styles.input, f.key === 'description' && styles.textArea]}
-                    value={form[f.key] ?? ''}
-                    onChangeText={(v) => setForm((prev) => ({ ...prev, [f.key]: v }))}
-                    placeholder={f.key === 'eventDate' ? 'YYYY-MM-DD' : f.label}
-                    placeholderTextColor={palette.textMuted}
-                    multiline={f.key === 'description'}
-                  />
+            <Text style={styles.modalTitle}>
+              {t('events.addFor')} {selectedDate.toLocaleDateString(lang === 'hi' ? 'hi-IN' : lang === 'mr' ? 'mr-IN' : 'en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
+            </Text>
+            <ScrollView style={{ maxHeight: 480 }}>
+              <View style={{ marginBottom: spacing.md }}>
+                <Text style={styles.fieldLabel}>{t('events.eventTime')} *</Text>
+                <View style={styles.timeSection}>
+                  <View style={styles.timeColumn}>
+                    <Text style={styles.fieldLabel}>{t('events.hour')}</Text>
+                    <View style={styles.timePickerRow}>
+                      {HOURS.map((h) => (
+                        <TouchableOpacity
+                          key={h}
+                          style={[styles.chip, time.hour === h && styles.chipActive]}
+                          onPress={() => setTime((prev) => ({ ...prev, hour: h }))}
+                          activeOpacity={0.7}
+                        >
+                          <Text style={time.hour === h ? styles.chipTextActive : styles.chipText}>{h}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  </View>
+                  <View style={[styles.timeColumn, { marginLeft: spacing.sm }]}>
+                    <Text style={styles.fieldLabel}>{t('events.minute')}</Text>
+                    <View style={styles.timePickerRow}>
+                      {MINUTES.map((m) => (
+                        <TouchableOpacity
+                          key={m}
+                          style={[styles.chip, time.minute === m && styles.chipActive]}
+                          onPress={() => setTime((prev) => ({ ...prev, minute: m }))}
+                          activeOpacity={0.7}
+                        >
+                          <Text style={time.minute === m ? styles.chipTextActive : styles.chipText}>{pad(m)}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  </View>
                 </View>
-              ))}
+                <View style={styles.timePickerRow}>
+                  {(['AM', 'PM'] as const).map((p) => (
+                    <TouchableOpacity
+                      key={p}
+                      style={[styles.chip, time.period === p && styles.chipActive]}
+                      onPress={() => setTime((prev) => ({ ...prev, period: p }))}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={time.period === p ? styles.chipTextActive : styles.chipText}>{p}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              <View style={{ marginBottom: spacing.md }}>
+                <Text style={styles.fieldLabel}>{t('common.title')} *</Text>
+                <TextInput
+                  style={styles.input}
+                  value={form.title ?? ''}
+                  onChangeText={(v) => setForm((prev) => ({ ...prev, title: v }))}
+                  placeholder={t('common.title')}
+                  placeholderTextColor={palette.textMuted}
+                />
+              </View>
+
+              <View style={{ marginBottom: spacing.md }}>
+                <Text style={styles.fieldLabel}>{t('common.description')}</Text>
+                <TextInput
+                  style={[styles.input, styles.textArea]}
+                  value={form.description ?? ''}
+                  onChangeText={(v) => setForm((prev) => ({ ...prev, description: v }))}
+                  placeholder={t('common.description')}
+                  placeholderTextColor={palette.textMuted}
+                  multiline
+                />
+              </View>
             </ScrollView>
             <View style={styles.modalActions}>
               <TouchableOpacity style={styles.cancelButton} onPress={() => setModalOpen(false)}>
