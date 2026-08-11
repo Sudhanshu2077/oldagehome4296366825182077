@@ -27,6 +27,20 @@ function dayKey(d: Date): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
+function istToday(): Date {
+  const fmt = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Kolkata',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+  const parts = fmt.formatToParts(new Date());
+  const get = (type: string): number => Number(parts.find((p) => p.type === type)?.value ?? 0);
+  return new Date(get('year'), get('month') - 1, get('day'));
+}
+
+const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+
 export default function EventsScreen() {
   const { palette } = useTheme();
   const { t, lang } = useI18n();
@@ -38,8 +52,8 @@ export default function EventsScreen() {
   const [form, setForm] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
-  const today = useMemo(() => new Date(), []);
-  const [viewMonth, setViewMonth] = useState(today.getFullYear());
+  const today = useMemo(() => istToday(), []);
+  const [viewMonth, setViewMonth] = useState(today.getMonth());
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [selectedDate, setSelectedDate] = useState<Date>(today);
   const [time, setTime] = useState({ hour: 9, minute: 0, period: 'AM' as 'AM' | 'PM' });
@@ -87,6 +101,8 @@ export default function EventsScreen() {
     calNavBtn: { paddingHorizontal: spacing.lg, paddingVertical: spacing.xs, borderRadius: radii.sm, backgroundColor: palette.surfaceAlt },
     calNavBtnText: { fontSize: 16, fontWeight: '700', color: palette.primaryDark },
     calMonthLabel: { fontSize: 14, fontWeight: '700', color: palette.text },
+    todayBtn: { alignSelf: 'center', marginTop: spacing.xs, paddingHorizontal: spacing.lg, paddingVertical: spacing.xs, borderRadius: radii.pill, backgroundColor: palette.secondary, borderWidth: 1, borderColor: palette.primaryLight },
+    todayBtnText: { fontSize: 12, fontWeight: '600', color: palette.primary },
     weekdayRow: { flexDirection: 'row' },
     weekdayCell: { flex: 1, alignItems: 'center', paddingVertical: spacing.xs },
     weekdayLabel: { fontSize: 10, fontWeight: '600', color: palette.textMuted },
@@ -158,6 +174,20 @@ export default function EventsScreen() {
     }
   }
 
+  function prevYear() {
+    setViewYear(viewYear - 1);
+  }
+
+  function nextYear() {
+    setViewYear(viewYear + 1);
+  }
+
+  function goToday() {
+    setViewMonth(today.getMonth());
+    setViewYear(today.getFullYear());
+    setSelectedDate(today);
+  }
+
   function buildDays(): (number | null)[] {
     const first = new Date(viewYear, viewMonth, 1);
     const startOffset = first.getDay();
@@ -180,7 +210,7 @@ export default function EventsScreen() {
       const hour24 = time.period === 'PM'
         ? (time.hour === 12 ? 12 : time.hour + 12)
         : (time.hour === 12 ? 0 : time.hour);
-      const eventDate = `${viewYear}-${pad(viewMonth + 1)}-${pad(selectedDate.getDate())}T${pad(hour24)}:${pad(time.minute)}:00`;
+      const eventDate = new Date(Date.UTC(viewYear, viewMonth, selectedDate.getDate(), hour24, time.minute) - IST_OFFSET_MS).toISOString();
       await api.post('/events', { ...form, eventDate });
       setModalOpen(false);
       await load();
@@ -215,6 +245,9 @@ export default function EventsScreen() {
           <View>
             <View style={styles.calendarCard}>
               <View style={styles.calNavRow}>
+                <TouchableOpacity style={styles.calNavBtn} onPress={prevYear} activeOpacity={0.7}>
+                  <Text style={styles.calNavBtnText}>«</Text>
+                </TouchableOpacity>
                 <TouchableOpacity style={styles.calNavBtn} onPress={prevMonth} activeOpacity={0.7}>
                   <Text style={styles.calNavBtnText}>‹</Text>
                 </TouchableOpacity>
@@ -222,7 +255,13 @@ export default function EventsScreen() {
                 <TouchableOpacity style={styles.calNavBtn} onPress={nextMonth} activeOpacity={0.7}>
                   <Text style={styles.calNavBtnText}>›</Text>
                 </TouchableOpacity>
+                <TouchableOpacity style={styles.calNavBtn} onPress={nextYear} activeOpacity={0.7}>
+                  <Text style={styles.calNavBtnText}>»</Text>
+                </TouchableOpacity>
               </View>
+              <TouchableOpacity style={styles.todayBtn} onPress={goToday} activeOpacity={0.7}>
+                <Text style={styles.todayBtnText}>{t('events.today')}</Text>
+              </TouchableOpacity>
 
               <View style={styles.weekdayRow}>
                 {WEEKDAYS.map((w) => (
