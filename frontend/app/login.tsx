@@ -19,6 +19,8 @@ import { spacing, radii } from '../src/config/theme';
 import { HeaderControls } from '../src/components/HeaderControls';
 import { PoliteModal } from '../src/components/PoliteModal';
 
+const GOOGLE_LOGIN_ENABLED = false;
+
 function GoogleLogo({ size = 18 }: { size?: number }) {
   const w = size;
   const h = size;
@@ -138,7 +140,7 @@ export default function LoginScreen() {
             {busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.primaryButtonText}>{t('login.button')}</Text>}
           </TouchableOpacity>
 
-          {Platform.OS === 'web' ? (
+          {GOOGLE_LOGIN_ENABLED && Platform.OS === 'web' ? (
             <TouchableOpacity style={[styles.googleButton, { backgroundColor: palette.surface, borderColor: palette.border }]} onPress={() => void handleGoogleLogin()} disabled={busy} activeOpacity={0.8}>
               <View style={styles.googleBtnContent}>
                 <GoogleLogo size={18} />
