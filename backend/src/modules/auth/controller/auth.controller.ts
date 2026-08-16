@@ -14,6 +14,43 @@ export class AuthController {
   ) {}
 
   register(app: FastifyInstance): void {
+    if (process.env.ENABLE_DEV_LOGIN === 'true') {
+      app.post<{ Body: { role?: string } }>('/auth/dev-login', async (req, reply) => {
+        const role = (req.body?.role ?? 'assistant-manager') as string;
+        const allowed = ['assistant-manager', 'institution-head', 'department-user'];
+        const roleId = allowed.includes(role) ? role : 'assistant-manager';
+
+        let institution = await this.tenantService.getByCodeOrNull('DEV-HOME-001');
+        if (!institution) {
+          institution = await this.tenantService.create({
+            name: 'Dev Demo Old Age Home',
+            nameMr: 'डेमो वृद्धाश्रम',
+            code: 'DEV-HOME-001',
+          });
+        }
+
+        const devEmail = `dev.${roleId}@localhost.dev`;
+        let user = await this.userRepo.findByEmail(devEmail);
+        if (!user) {
+          user = await this.userRepo.create({
+            firebaseUid: `dev-${roleId}`,
+            email: devEmail,
+            emailVerified: true,
+            displayName: `Dev ${roleId}`,
+            roleId: roleId as 'assistant-manager',
+            tenantId: institution.id,
+            departmentCode: roleId === 'department-user' ? 'reception' : null,
+            jurisdiction: null,
+            grantedPermissions: ['register:read:*', 'announcement:read:*', 'announcement:write:*', 'event:read:*', 'event:write:*', 'inquiry:read:*', 'inquiry:write:*', 'finance:read:*', 'finance:write:*', 'user:read:*', 'user:write:*', 'settings:read:*', 'settings:write:*', 'audit-log:read:*', 'document:read:*', 'document:write:*'],
+            registerWriteScopes: roleId === 'department-user' ? ['R1', 'R6', 'R7'] : [],
+          });
+        }
+
+        const result = await this.service.issueSessionForUser(app, req, user.id, 'dev-local', false);
+        reply.send(ok(result));
+      });
+    }
+
     app.post<{ Body: { idToken: string; deviceId?: string; rememberDevice?: boolean } }>(
       '/auth/login',
       { config: { rateLimit: { max: 10, timeWindow: '1 minute' } } },

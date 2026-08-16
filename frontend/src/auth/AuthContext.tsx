@@ -29,6 +29,7 @@ interface AuthState {
   user: UserProfile | null;
   signInEmail: (email: string, password: string) => Promise<void>;
   signInGoogle: () => Promise<void>;
+  signInDev: (role?: string) => Promise<void>;
   signUpGoogle: () => Promise<string>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -122,6 +123,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
   }, []);
 
+  const signInDev = useCallback(async (role = 'assistant-manager') => {
+    const res = await api.post('/auth/dev-login', { role });
+    const payload = (res.data as { data: { accessToken: string; refreshToken: string; user: UserProfile } }).data;
+    await tokenStorage.setItem('accessToken', payload.accessToken);
+    await tokenStorage.setItem('refreshToken', payload.refreshToken);
+    setUser(payload.user);
+    setStatus('signed-in');
+  }, []);
+
   const signUpGoogle = useCallback(async (): Promise<string> => {
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
@@ -154,8 +164,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo<AuthState>(
-    () => ({ status, user, signInEmail, signInGoogle, signUpGoogle, signOut, refreshProfile }),
-    [status, user, signInEmail, signInGoogle, signUpGoogle, signOut, refreshProfile],
+    () => ({ status, user, signInEmail, signInGoogle, signInDev, signUpGoogle, signOut, refreshProfile }),
+    [status, user, signInEmail, signInGoogle, signInDev, signUpGoogle, signOut, refreshProfile],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

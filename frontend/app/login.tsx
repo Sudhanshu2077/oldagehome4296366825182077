@@ -35,7 +35,7 @@ function GoogleLogo({ size = 18 }: { size?: number }) {
 }
 
 export default function LoginScreen() {
-  const { signInEmail, signInGoogle } = useAuth();
+  const { signInEmail, signInGoogle, signInDev } = useAuth();
   const { palette } = useTheme();
   const { t } = useI18n();
   const params = useLocalSearchParams<{ registered?: string }>();
@@ -88,6 +88,19 @@ export default function LoginScreen() {
       router.replace('/(tabs)/dashboard');
     } catch (err) {
       handleLoginError(err);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleDevLogin(role: string) {
+    setBusy(true);
+    setError(null);
+    try {
+      await signInDev(role);
+      router.replace('/(tabs)/dashboard');
+    } catch (err) {
+      setError(errorMessage(err));
     } finally {
       setBusy(false);
     }
@@ -148,6 +161,10 @@ export default function LoginScreen() {
               </View>
             </TouchableOpacity>
           ) : null}
+
+          <TouchableOpacity style={[styles.skipButton, { backgroundColor: palette.backgroundSoft, borderColor: palette.border }]} onPress={() => void handleDevLogin('assistant-manager')} disabled={busy} activeOpacity={0.8}>
+            {busy ? <ActivityIndicator color={palette.primary} /> : <Text style={[styles.skipButtonText, { color: palette.textMuted }]}>{t('login.skip')}</Text>}
+          </TouchableOpacity>
         </View>
 
         <View style={styles.linksWrap}>
@@ -205,6 +222,8 @@ const styles = StyleSheet.create({
   googleButton: { borderWidth: 1, borderRadius: radii.md, paddingVertical: spacing.md, alignItems: 'center', marginBottom: spacing.md, minHeight: 48 },
   googleBtnContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
   googleButtonText: { fontWeight: '600', fontSize: 15 },
+  skipButton: { borderWidth: 1, borderRadius: radii.md, paddingVertical: spacing.sm, alignItems: 'center', marginBottom: spacing.md, minHeight: 42 },
+  skipButtonText: { fontWeight: '500', fontSize: 13 },
   linksWrap: { marginTop: spacing.lg, gap: spacing.sm, alignItems: 'center' },
   link: { textAlign: 'center', fontSize: 13, fontWeight: '600' },
 });
