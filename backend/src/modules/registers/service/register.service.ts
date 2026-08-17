@@ -7,14 +7,14 @@ import { normalizePageQuery } from '../../../kernel/pagination/pagination.js';
 
 export const REGISTER_TITLES: Record<RegisterScopeId, { en: string; mr: string }> = {
   R1: { en: 'Admission Register', mr: 'प्रवेश नोंदवही' },
-  R2: { en: '', mr: '' },
+  R2: { en: 'FOOD TASTE REGISTER', mr: 'भोजन चव रजिस्टर' },
   R3: { en: 'INWARD REGISTER', mr: 'आवक रजिस्टर' },
   R4: { en: 'EMPLOYEE IN OUT REGISTER', mr: 'कर्मचारी हालचाल बुक' },
   R5: { en: 'SOAP, CLEANING GOODS / DISTRIBUTION REGISTER', mr: 'साबण, निरमा वस्तू वाटप रजिस्टर' },
   R6: { en: 'VISIT BOOK', mr: 'अभिप्राय बुक' },
-  R7: { en: '', mr: '' },
-  R8: { en: '', mr: '' },
-  R9: { en: '', mr: '' },
+  R7: { en: 'MEDICAL REGISTER', mr: 'वैद्यकीय तपासणी रजिस्टर' },
+  R8: { en: 'CASH BOOK', mr: 'रोख रजिस्टर' },
+  R9: { en: 'SOURCE-VERIFIED REGISTER', mr: 'स्रोत-पडताळलेले रजिस्टर' },
   R10: { en: '', mr: '' },
   R11: { en: '', mr: '' },
   R12: { en: '', mr: '' },

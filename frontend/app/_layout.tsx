@@ -45,6 +45,15 @@ function NavShell() {
         <Stack.Screen name="distribution/list" options={{ headerShown: true, title: 'SOAP, CLEANING GOODS / DISTRIBUTION REGISTER' }} />
         <Stack.Screen name="distribution/new" options={{ headerShown: true, title: 'New Entry' }} />
         <Stack.Screen name="distribution/[id]" options={{ headerShown: true, title: 'Entry Details' }} />
+        <Stack.Screen name="schema-register/[code]/list" options={{ headerShown: true, title: 'Register' }} />
+        <Stack.Screen name="schema-register/[code]/new" options={{ headerShown: true, title: 'New Entry' }} />
+        <Stack.Screen name="schema-register/[code]/[id]" options={{ headerShown: true, title: 'Entry Details' }} />
+        <Stack.Screen name="medical/list" options={{ headerShown: true, title: 'MEDICAL REGISTER' }} />
+        <Stack.Screen name="medical/new" options={{ headerShown: true, title: 'New Entry' }} />
+        <Stack.Screen name="medical/[id]" options={{ headerShown: true, title: 'Entry Details' }} />
+        <Stack.Screen name="cashbook/list" options={{ headerShown: true, title: 'CASH BOOK' }} />
+        <Stack.Screen name="cashbook/new" options={{ headerShown: true, title: 'New Entry' }} />
+        <Stack.Screen name="cashbook/[id]" options={{ headerShown: true, title: 'Entry Details' }} />
       </Stack>
       <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />
     </NavThemeProvider>

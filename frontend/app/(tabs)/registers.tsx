@@ -74,6 +74,14 @@ export default function RegistersScreen() {
               router.push('/employee-inout/list');
             } else if (item.id === 'R5') {
               router.push('/distribution/list');
+            } else if (item.id === 'R2') {
+              router.push({ pathname: '/schema-register/[code]/list', params: { code: 'food-taste' } });
+            } else if (item.id === 'R9') {
+              router.push({ pathname: '/schema-register/[code]/list', params: { code: 'source-verified' } });
+            } else if (item.id === 'R7') {
+              router.push('/medical/list');
+            } else if (item.id === 'R8') {
+              router.push('/cashbook/list');
             } else {
               router.push({ pathname: '/register/[id]', params: { id: item.id, title: item.title } });
             }
