@@ -216,7 +216,7 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   headerWrap: { alignItems: 'center', marginBottom: spacing.xl, marginTop: spacing.sm },
   avatar: { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.md },
-  avatarText: { fontSize: 28, fontWeight: '800', color: '#7c2d12' },
+  avatarText: { fontSize: 28, fontWeight: '800', color: '#1d4ed8' },
   name: { fontSize: 20, fontWeight: '700' },
   email: { fontSize: 13, marginTop: 2 },
   section: { marginBottom: spacing.xl },

@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xl },
   brandWrap: { alignItems: 'center', marginBottom: spacing.lg },
   logo: { width: 60, height: 60, borderRadius: 30, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.md },
-  logoText: { fontSize: 24, fontWeight: '800', color: '#7c2d12' },
+  logoText: { fontSize: 24, fontWeight: '800', color: '#1d4ed8' },
   title: { fontSize: 18, fontWeight: '800', textAlign: 'center', lineHeight: 24 },
   subtitle: { fontSize: 13, textAlign: 'center', marginTop: spacing.xs, lineHeight: 18 },
   body: { fontSize: 14, textAlign: 'center', marginTop: spacing.sm, lineHeight: 21, marginBottom: spacing.lg },

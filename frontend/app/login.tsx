@@ -208,7 +208,7 @@ const styles = StyleSheet.create({
   container: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.lg, paddingTop: 80, paddingBottom: 40 },
   brandWrap: { alignItems: 'center', marginBottom: spacing.lg },
   logo: { width: 60, height: 60, borderRadius: 30, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.md },
-  logoText: { fontSize: 24, fontWeight: '800', color: '#7c2d12' },
+  logoText: { fontSize: 24, fontWeight: '800', color: '#1d4ed8' },
   card: { width: '100%', maxWidth: 420, borderRadius: radii.xl, padding: spacing.xl, borderWidth: 1, shadowOpacity: 0.1, shadowRadius: 20, shadowOffset: { width: 0, height: 8 }, elevation: 4 },
   title: { fontSize: 16, fontWeight: '700', textAlign: 'center', lineHeight: 22 },
   welcome: { fontSize: 24, fontWeight: '800', textAlign: 'left', marginBottom: 2 },

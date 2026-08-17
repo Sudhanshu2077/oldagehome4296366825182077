@@ -133,7 +133,7 @@ function useRefreshKey(refreshing: boolean): number {
 
 function SectionWrap({ children, refreshing, onRefresh }: { children: React.ReactNode; refreshing: boolean; onRefresh: () => void }) {
   return (
-    <ScrollView contentContainerStyle={{ paddingHorizontal: spacing.md, paddingTop: 0, paddingBottom: 40 }} refreshControl={Platform.OS === 'web' ? undefined : <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#ea580c" />}>
+    <ScrollView contentContainerStyle={{ paddingHorizontal: spacing.md, paddingTop: 0, paddingBottom: 40 }} refreshControl={Platform.OS === 'web' ? undefined : <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#2563eb" />}>
       {children}
     </ScrollView>
   );
@@ -570,7 +570,7 @@ function StatementsSection({ refreshing }: { refreshing: boolean }) {
   const period = data?.periodStart && data?.periodEnd ? `${data.periodStart} → ${data.periodEnd}` : data?.asOf ?? '';
 
   return (
-    <ScrollView contentContainerStyle={{ padding: spacing.md, paddingBottom: 40 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(tab)} tintColor="#ea580c" />}>
+    <ScrollView contentContainerStyle={{ padding: spacing.md, paddingBottom: 40 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(tab)} tintColor="#2563eb" />}>
       <View style={styles.pillRow}>
         {Object.keys(labels).map((k) => (
           <TouchableOpacity key={k} style={[styles.pill, tab === k && styles.pillActive]} onPress={() => setTab(k)}>
