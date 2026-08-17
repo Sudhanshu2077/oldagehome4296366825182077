@@ -60,6 +60,13 @@ function escapeXml(v: unknown): string {
   return String(v ?? '').replace(/[<>&]/g, (m) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' })[m] as string);
 }
 
+function fmtDate(v: unknown): string {
+  if (v === null || v === undefined || v === '') return '';
+  if (v instanceof Date && !Number.isNaN(v.getTime())) return v.toISOString().slice(0, 10);
+  const s = String(v);
+  return s.slice(0, 10);
+}
+
 export class DistributionService {
   constructor(private readonly repo: DistributionRepository = new DistributionRepository()) {}
 
@@ -322,7 +329,7 @@ export class DistributionService {
     for (const row of result.items) {
       lines.push([
         row.entryNumber,
-        row.date ? String(row.date).slice(0, 10) : '',
+        row.date ? fmtDate(row.date) : '',
         row.personName,
         row.className,
         row.clothesWashingPowder,
@@ -333,7 +340,7 @@ export class DistributionService {
         row.brush,
         row.sourceColumn10,
         row.sourceColumn11,
-        row.distributionDate ? String(row.distributionDate).slice(0, 10) : '',
+        row.distributionDate ? fmtDate(row.distributionDate) : '',
         row.superintendentSignature,
         row.remarks,
         row.status,
@@ -348,7 +355,7 @@ export class DistributionService {
     const header = ['Sr. No.', 'Date', 'Student Name', 'Class', 'Clothes Washing Powder', 'Clothes Washing Soap', 'Bathing Soap', 'Tooth Powder', 'Toothpaste', 'Toothbrush', 'Source Column 10', 'Source Column 11', 'Distribution Date', "Superintendent's Signature", 'Remarks'];
     const rows = [header, ...result.items.map((r, i) => [
       i + 1,
-      r.date ? String(r.date).slice(0, 10) : '',
+      r.date ? fmtDate(r.date) : '',
       r.personName,
       r.className,
       r.clothesWashingPowder,
@@ -359,7 +366,7 @@ export class DistributionService {
       r.brush,
       r.sourceColumn10,
       r.sourceColumn11,
-      r.distributionDate ? String(r.distributionDate).slice(0, 10) : '',
+      r.distributionDate ? fmtDate(r.distributionDate) : '',
       r.superintendentSignature,
       r.remarks,
     ])];
@@ -376,7 +383,7 @@ export class DistributionService {
     const rows = result.items.map((r, i) => `
       <tr>
         <td>${i + 1}</td>
-        <td>${r.date ? String(r.date).slice(0, 10) : ''}</td>
+        <td>${r.date ? fmtDate(r.date) : ''}</td>
         <td>${escapeXml(r.personName)}</td>
         <td>${escapeXml(r.className)}</td>
         <td>${r.clothesWashingPowder}</td>
@@ -387,7 +394,7 @@ export class DistributionService {
         <td>${r.brush}</td>
         <td>${r.sourceColumn10}</td>
         <td>${r.sourceColumn11}</td>
-        <td>${r.distributionDate ? String(r.distributionDate).slice(0, 10) : ''}</td>
+        <td>${r.distributionDate ? fmtDate(r.distributionDate) : ''}</td>
         <td>${escapeXml(r.superintendentSignature)}</td>
         <td>${escapeXml(r.remarks)}</td>
       </tr>

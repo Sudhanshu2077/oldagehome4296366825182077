@@ -33,6 +33,13 @@ function escapeCsv(v: unknown): string {
   return s;
 }
 
+function fmtDate(v: unknown): string {
+  if (v === null || v === undefined || v === '') return '';
+  if (v instanceof Date && !Number.isNaN(v.getTime())) return v.toISOString().slice(0, 10);
+  const s = String(v);
+  return s.slice(0, 10);
+}
+
 export class VisitBookService {
   constructor(private readonly repo: VisitBookRepository = new VisitBookRepository()) {}
 
@@ -225,7 +232,7 @@ export class VisitBookService {
     for (const row of result.items) {
       lines.push([
         row.entryNumber,
-        row.entryDate ? String(row.entryDate).slice(0, 10) : '',
+        row.entryDate ? fmtDate(row.entryDate) : '',
         row.officerName,
         row.officerPost,
         row.remark,
@@ -241,7 +248,7 @@ export class VisitBookService {
     const header = ['Entry No.', 'Date', 'Officer Name', 'Officer Post', 'Remark', 'Status'];
     const rows = [header, ...result.items.map((r) => [
       r.entryNumber,
-      r.entryDate ? String(r.entryDate).slice(0, 10) : '',
+      r.entryDate ? fmtDate(r.entryDate) : '',
       r.officerName,
       r.officerPost,
       r.remark,
@@ -260,7 +267,7 @@ export class VisitBookService {
     const rows = result.items.map((r, i) => `
       <tr>
         <td>${i + 1}</td>
-        <td>${r.entryDate ? String(r.entryDate).slice(0, 10) : ''}</td>
+        <td>${r.entryDate ? fmtDate(r.entryDate) : ''}</td>
         <td>${r.officerName}${r.officerPost ? `, ${r.officerPost}` : ''}</td>
         <td>${r.remark}</td>
       </tr>

@@ -42,6 +42,13 @@ function escapeXml(v: unknown): string {
   return String(v ?? '').replace(/[<>&]/g, (m) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' })[m] as string);
 }
 
+function fmtDate(v: unknown): string {
+  if (v === null || v === undefined || v === '') return '';
+  if (v instanceof Date && !Number.isNaN(v.getTime())) return v.toISOString().slice(0, 10);
+  const s = String(v);
+  return s.slice(0, 10);
+}
+
 export class MedicalService {
   constructor(private readonly repo: MedicalRepository = new MedicalRepository()) {}
 
@@ -265,7 +272,7 @@ export class MedicalService {
     for (const row of result.items) {
       lines.push([
         row.entryNumber,
-        row.illnessDate ? String(row.illnessDate).slice(0, 10) : '',
+        row.illnessDate ? fmtDate(row.illnessDate) : '',
         row.personName,
         row.diseaseNature,
         row.medicineParticulars,
@@ -285,7 +292,7 @@ export class MedicalService {
     const header = ['Sr. No.', 'Date of Illness', 'Student Name', 'Nature of Disease', 'Medicine Particulars', 'Medicine Allowances', 'Medical Officer Name', 'Medical Officer Signature', 'Remarks'];
     const rows = [header, ...result.items.map((r, i) => [
       i + 1,
-      r.illnessDate ? String(r.illnessDate).slice(0, 10) : '',
+      r.illnessDate ? fmtDate(r.illnessDate) : '',
       r.personName,
       r.diseaseNature,
       r.medicineParticulars,
@@ -307,7 +314,7 @@ export class MedicalService {
     const rows = result.items.map((r, i) => `
       <tr>
         <td>${i + 1}</td>
-        <td>${r.illnessDate ? String(r.illnessDate).slice(0, 10) : ''}</td>
+        <td>${r.illnessDate ? fmtDate(r.illnessDate) : ''}</td>
         <td>${escapeXml(r.personName)}</td>
         <td>${escapeXml(r.diseaseNature)}</td>
         <td>${escapeXml(r.medicineParticulars)}</td>

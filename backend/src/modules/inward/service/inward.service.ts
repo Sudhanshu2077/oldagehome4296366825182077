@@ -40,6 +40,13 @@ function escapeXml(v: unknown): string {
   return String(v ?? '').replace(/[<>&]/g, (m) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' })[m] as string);
 }
 
+function fmtDate(v: unknown): string {
+  if (v === null || v === undefined || v === '') return '';
+  if (v instanceof Date && !Number.isNaN(v.getTime())) return v.toISOString().slice(0, 10);
+  const s = String(v);
+  return s.slice(0, 10);
+}
+
 export class InwardService {
   constructor(private readonly repo: InwardRepository = new InwardRepository()) {}
 
@@ -259,7 +266,7 @@ export class InwardService {
         row.fileNo,
         row.senderName,
         row.letterNo,
-        row.receivedDate ? String(row.receivedDate).slice(0, 10) : '',
+        row.receivedDate ? fmtDate(row.receivedDate) : '',
         row.subject,
         row.issuedTo,
         row.status,
@@ -276,7 +283,7 @@ export class InwardService {
       r.entryNumber + (r.fileNo ? ` / ${r.fileNo}` : ''),
       r.senderName,
       r.letterNo,
-      r.receivedDate ? String(r.receivedDate).slice(0, 10) : '',
+      r.receivedDate ? fmtDate(r.receivedDate) : '',
       r.subject,
       r.issuedTo,
       r.status,
@@ -296,7 +303,7 @@ export class InwardService {
         <td>${i + 1}<br/>${r.fileNo ? escapeXml(r.fileNo) : ''}</td>
         <td>${escapeXml(r.senderName)}</td>
         <td>${escapeXml(r.letterNo)}</td>
-        <td>${r.receivedDate ? String(r.receivedDate).slice(0, 10) : ''}</td>
+        <td>${r.receivedDate ? fmtDate(r.receivedDate) : ''}</td>
         <td>${escapeXml(r.subject)}</td>
         <td>${escapeXml(r.issuedTo)}</td>
       </tr>

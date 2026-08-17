@@ -40,6 +40,13 @@ function parseDate(v: unknown): Date | null {
   return d;
 }
 
+function fmtDate(v: unknown): string {
+  if (v === null || v === undefined || v === '') return '';
+  if (v instanceof Date && !Number.isNaN(v.getTime())) return v.toISOString().slice(0, 10);
+  const s = String(v);
+  return s.slice(0, 10);
+}
+
 function escapeCsv(v: unknown): string {
   const s = String(v ?? '');
   if (s.includes(',') || s.includes('"') || s.includes('\n') || s.includes('\r')) {
@@ -143,12 +150,14 @@ export class SchemaRegisterService {
       throw new ValidationError('columns array is required');
     }
     const seen = new Set<string>();
+    const reserved = new Set(['entryNumber', 'status', 'date', 'month', 'remarks', 'createdAt', 'updatedAt', 'submittedAt', 'finalizedAt', 'changes']);
     return raw.map((c, i) => {
       const col = (c ?? {}) as Record<string, unknown>;
       const key = String(col.key ?? '').trim();
       if (!/^[a-zA-Z0-9_]{1,64}$/.test(key)) {
         throw new ValidationError(`column ${i + 1}: key must match [a-zA-Z0-9_]{1,64}`);
       }
+      if (reserved.has(key)) throw new ValidationError(`column key is reserved: ${key}`);
       if (seen.has(key)) throw new ValidationError(`duplicate column key: ${key}`);
       seen.add(key);
       const en = String(col.en ?? '').trim();
@@ -394,6 +403,13 @@ export class SchemaRegisterService {
     return columns;
   }
 
+  private exportValue(col: SRegColumn, row: SRegEntryRow): unknown {
+    if (col.type === 'signature') return row.signatures[col.key] ?? '';
+    const v = row.values[col.key];
+    if (col.type === 'date') return fmtDate(v);
+    return v ?? '';
+  }
+
   async exportCsv(req: FastifyRequest, codeRaw: string): Promise<string> {
     const code = this.normalizeCode(codeRaw);
     const tenantIds = await this.scopedTenantIds(req);
@@ -402,9 +418,9 @@ export class SchemaRegisterService {
     const header = ['entryNumber', 'date', ...columns.map((c) => c.key), 'remarks', 'status'];
     const lines = [header.map((h) => `"${h}"`).join(',')];
     for (const row of result.items) {
-      const cells: unknown[] = [row.entryNumber, row.date ? String(row.date).slice(0, 10) : ''];
+      const cells: unknown[] = [row.entryNumber, fmtDate(row.date)];
       for (const col of columns) {
-        cells.push(col.type === 'signature' ? (row.signatures[col.key] ?? '') : (row.values[col.key] ?? ''));
+        cells.push(this.exportValue(col, row));
       }
       cells.push(row.remarks, row.status);
       lines.push(cells.map(escapeCsv).join(','));
@@ -419,9 +435,9 @@ export class SchemaRegisterService {
     const result = await this.repo.list(tenantIds, code, {}, 1, 100000);
     const header = ['Sr. No.', 'Date', ...columns.map((c) => c.en), 'Remarks'];
     const rows = [header, ...result.items.map((r, i) => {
-      const cells: unknown[] = [i + 1, r.date ? String(r.date).slice(0, 10) : ''];
+      const cells: unknown[] = [i + 1, fmtDate(r.date)];
       for (const col of columns) {
-        cells.push(col.type === 'signature' ? (r.signatures[col.key] ?? '') : (r.values[col.key] ?? ''));
+        cells.push(this.exportValue(col, r));
       }
       cells.push(r.remarks);
       return cells;
@@ -442,8 +458,8 @@ export class SchemaRegisterService {
     const rows = result.items.map((r, i) => `
       <tr>
         <td>${i + 1}</td>
-        <td>${r.date ? String(r.date).slice(0, 10) : ''}</td>
-        ${columns.map((col) => `<td>${escapeXml(col.type === 'signature' ? (r.signatures[col.key] ?? '') : (r.values[col.key] ?? ''))}</td>`).join('')}
+        <td>${fmtDate(r.date)}</td>
+        ${columns.map((col) => `<td>${escapeXml(this.exportValue(col, r))}</td>`).join('')}
         <td>${escapeXml(r.remarks)}</td>
       </tr>
     `).join('');

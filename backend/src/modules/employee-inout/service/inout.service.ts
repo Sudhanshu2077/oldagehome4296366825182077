@@ -49,6 +49,13 @@ function escapeXml(v: unknown): string {
   return String(v ?? '').replace(/[<>&]/g, (m) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' })[m] as string);
 }
 
+function fmtDate(v: unknown): string {
+  if (v === null || v === undefined || v === '') return '';
+  if (v instanceof Date && !Number.isNaN(v.getTime())) return v.toISOString().slice(0, 10);
+  const s = String(v);
+  return s.slice(0, 10);
+}
+
 export class InOutService {
   constructor(private readonly repo: InOutRepository = new InOutRepository()) {}
 
@@ -320,13 +327,13 @@ export class InOutService {
     result.items.forEach((row, i) => {
       lines.push([
         i + 1,
-        row.outDate ? String(row.outDate).slice(0, 10) : '',
+        row.outDate ? fmtDate(row.outDate) : '',
         row.employeeName,
         row.outTime,
         row.place,
         row.reason,
         row.outSignature,
-        row.returnDate ? String(row.returnDate).slice(0, 10) : '',
+        row.returnDate ? fmtDate(row.returnDate) : '',
         row.returnTime,
         row.inSignature,
         row.remarks,
@@ -342,13 +349,13 @@ export class InOutService {
     const header = ['Sr. No.', 'Date', 'Name of Employee', 'Out Time', 'Place to Visit', 'Reason', "Employee's Sign. (Out)", 'Return Date', 'Time (In)', 'Sign. (In)', 'Remarks', 'Status'];
     const rows = [header, ...result.items.map((r, i) => [
       i + 1,
-      r.outDate ? String(r.outDate).slice(0, 10) : '',
+      r.outDate ? fmtDate(r.outDate) : '',
       r.employeeName,
       r.outTime,
       r.place,
       r.reason,
       r.outSignature,
-      r.returnDate ? String(r.returnDate).slice(0, 10) : '',
+      r.returnDate ? fmtDate(r.returnDate) : '',
       r.returnTime,
       r.inSignature,
       r.remarks,
@@ -367,13 +374,13 @@ export class InOutService {
     const rows = result.items.map((r, i) => `
       <tr>
         <td>${i + 1}</td>
-        <td>${r.outDate ? String(r.outDate).slice(0, 10) : ''}</td>
+        <td>${r.outDate ? fmtDate(r.outDate) : ''}</td>
         <td>${escapeXml(r.employeeName)}</td>
         <td>${escapeXml(r.outTime)}</td>
         <td>${escapeXml(r.place)}</td>
         <td>${escapeXml(r.reason)}</td>
         <td>${escapeXml(r.outSignature)}</td>
-        <td>${r.returnDate ? String(r.returnDate).slice(0, 10) : ''}</td>
+        <td>${r.returnDate ? fmtDate(r.returnDate) : ''}</td>
         <td>${escapeXml(r.returnTime)}</td>
         <td>${escapeXml(r.inSignature)}</td>
         <td>${escapeXml(r.remarks)}</td>

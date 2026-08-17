@@ -48,6 +48,13 @@ function escapeXml(v: unknown): string {
   return String(v ?? '').replace(/[<>&]/g, (m) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' })[m] as string);
 }
 
+function fmtDate(v: unknown): string {
+  if (v === null || v === undefined || v === '') return '';
+  if (v instanceof Date && !Number.isNaN(v.getTime())) return v.toISOString().slice(0, 10);
+  const s = String(v);
+  return s.slice(0, 10);
+}
+
 export class CashbookService {
   constructor(private readonly repo: CashbookRepository = new CashbookRepository()) {}
 
@@ -261,7 +268,7 @@ export class CashbookService {
     for (const row of result.items) {
       lines.push([
         row.entryNumber,
-        row.entryDate ? String(row.entryDate).slice(0, 10) : '',
+        row.entryDate ? fmtDate(row.entryDate) : '',
         row.month,
         row.vrNo,
         row.particulars,
@@ -283,8 +290,8 @@ export class CashbookService {
     const header = ['Sr. No.', 'Month / Date', 'V.R. No.', 'Particulars', 'L.F. No.', 'Cash Rs.', 'Cash Ps.', 'Bank Rs.', 'Bank Ps.', 'Remarks'];
     const rows = [header, ...result.items.map((r, i) => [
       i + 1,
-      r.entryDate ? String(r.entryDate).slice(0, 10) : '',
-      r.month ? `${r.month}${r.entryDate ? ' / ' + String(r.entryDate).slice(0, 10) : ''}` : (r.entryDate ? String(r.entryDate).slice(0, 10) : ''),
+      r.entryDate ? fmtDate(r.entryDate) : '',
+      r.month ? `${r.month}${r.entryDate ? ' / ' + fmtDate(r.entryDate) : ''}` : (r.entryDate ? fmtDate(r.entryDate) : ''),
       r.vrNo,
       r.particulars,
       r.lfNo,
@@ -307,7 +314,7 @@ export class CashbookService {
     const rows = result.items.map((r, i) => `
       <tr>
         <td>${i + 1}</td>
-        <td>${r.entryDate ? String(r.entryDate).slice(0, 10) : ''}</td>
+        <td>${r.entryDate ? fmtDate(r.entryDate) : ''}</td>
         <td>${escapeXml(r.month)}</td>
         <td>${escapeXml(r.vrNo)}</td>
         <td>${escapeXml(r.particulars)}</td>
