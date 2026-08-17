@@ -6,7 +6,7 @@ import { assertTenantWriteAccess, resolvedTenantId } from '../../../plugins/tena
 import { normalizePageQuery } from '../../../kernel/pagination/pagination.js';
 
 export const REGISTER_TITLES: Record<RegisterScopeId, { en: string; mr: string }> = {
-  R1: { en: '', mr: '' },
+  R1: { en: 'Admission Register', mr: 'प्रवेश नोंदवही' },
   R2: { en: '', mr: '' },
   R3: { en: '', mr: '' },
   R4: { en: '', mr: '' },
