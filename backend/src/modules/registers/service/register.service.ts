@@ -10,7 +10,7 @@ export const REGISTER_TITLES: Record<RegisterScopeId, { en: string; mr: string }
   R2: { en: '', mr: '' },
   R3: { en: 'INWARD REGISTER', mr: 'आवक रजिस्टर' },
   R4: { en: 'EMPLOYEE IN OUT REGISTER', mr: 'कर्मचारी हालचाल बुक' },
-  R5: { en: '', mr: '' },
+  R5: { en: 'SOAP, CLEANING GOODS / DISTRIBUTION REGISTER', mr: 'साबण, निरमा वस्तू वाटप रजिस्टर' },
   R6: { en: 'VISIT BOOK', mr: 'अभिप्राय बुक' },
   R7: { en: '', mr: '' },
   R8: { en: '', mr: '' },

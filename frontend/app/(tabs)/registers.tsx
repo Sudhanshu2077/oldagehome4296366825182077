@@ -72,6 +72,8 @@ export default function RegistersScreen() {
               router.push('/inward/list');
             } else if (item.id === 'R4') {
               router.push('/employee-inout/list');
+            } else if (item.id === 'R5') {
+              router.push('/distribution/list');
             } else {
               router.push({ pathname: '/register/[id]', params: { id: item.id, title: item.title } });
             }

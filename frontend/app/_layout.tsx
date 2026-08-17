@@ -42,6 +42,9 @@ function NavShell() {
         <Stack.Screen name="employee-inout/list" options={{ headerShown: true, title: 'EMPLOYEE IN OUT REGISTER' }} />
         <Stack.Screen name="employee-inout/new" options={{ headerShown: true, title: 'New Entry' }} />
         <Stack.Screen name="employee-inout/[id]" options={{ headerShown: true, title: 'Entry Details' }} />
+        <Stack.Screen name="distribution/list" options={{ headerShown: true, title: 'SOAP, CLEANING GOODS / DISTRIBUTION REGISTER' }} />
+        <Stack.Screen name="distribution/new" options={{ headerShown: true, title: 'New Entry' }} />
+        <Stack.Screen name="distribution/[id]" options={{ headerShown: true, title: 'Entry Details' }} />
       </Stack>
       <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />
     </NavThemeProvider>

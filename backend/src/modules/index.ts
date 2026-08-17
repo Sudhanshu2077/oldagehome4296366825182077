@@ -16,6 +16,7 @@ import { admissionModule } from './admission/index.js';
 import { visitBookModule } from './visit-book/index.js';
 import { inwardModule } from './inward/index.js';
 import { employeeInOutModule } from './employee-inout/index.js';
+import { distributionModule } from './distribution/index.js';
 import { inquiriesModule } from './inquiries/routes/index.js';
 import { announcementsModule } from './announcements/routes/index.js';
 import { eventsModule } from './events/routes/index.js';
@@ -45,6 +46,7 @@ const modules: FastifyPluginAsync[] = [
   visitBookModule,
   inwardModule,
   employeeInOutModule,
+  distributionModule,
   inquiriesModule,
   announcementsModule,
   eventsModule,
