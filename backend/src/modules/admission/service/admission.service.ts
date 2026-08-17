@@ -76,6 +76,9 @@ function validatePersonal(body: Record<string, unknown>): void {
   if (body.phone && !/^[6-9]\d{9}$/.test(String(body.phone))) {
     throw new ValidationError('phone must be a valid 10-digit Indian mobile number');
   }
+  if (body.gender && body.gender !== 'male' && body.gender !== 'female' && body.gender !== 'other') {
+    throw new ValidationError('gender must be male, female or other');
+  }
   if (body.idProofNumber && String(body.idProofNumber).length > 50) throw new ValidationError('idProofNumber too long');
 }
 
@@ -172,7 +175,7 @@ export class AdmissionService {
 
     const set: Record<string, unknown> = {};
     const allowedKeys: (keyof AdmissionRow)[] = [
-      'name', 'fatherName', 'husbandName', 'surname', 'caste', 'religion', 'address', 'village', 'taluka', 'district', 'admissionDate',
+      'name', 'gender', 'fatherName', 'spouseName', 'surname', 'caste', 'religion', 'address', 'village', 'taluka', 'district', 'admissionDate',
       'currentAge', 'idProofNumber', 'occupationStatus', 'husband', 'wife', 'sonsDaughters', 'brothers',
       'annualIncome', 'freeAdmissionRequested', 'paidAdmission', 'monthlyFeeAcceptance',
       'dailyActivitiesSelf', 'noInfectiousDisease', 'rulesAccepted', 'noSubstanceAddiction',

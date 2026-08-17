@@ -59,8 +59,9 @@ const AdmissionSchema = new Schema(
     status: { type: String, enum: ADMISSION_STATUSES, default: 'DRAFT', index: true },
 
     name: { type: String, required: true, index: true },
+    gender: { type: String, enum: ['male', 'female', 'other'], default: null },
     fatherName: { type: String, default: '' },
-    husbandName: { type: String, default: '' },
+    spouseName: { type: String, default: '' },
     surname: { type: String, default: '' },
     caste: { type: String, default: '' },
     religion: { type: String, default: '' },

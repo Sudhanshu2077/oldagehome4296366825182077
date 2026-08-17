@@ -6,8 +6,9 @@ export interface AdmissionRow {
   applicationNumber: string;
   status: string;
   name: string;
+  gender: string | null;
   fatherName: string;
-  husbandName: string;
+  spouseName: string;
   surname: string;
   caste: string;
   religion: string;
@@ -70,8 +71,9 @@ export function toAdmissionRow(doc: AdmissionDoc): AdmissionRow {
     applicationNumber: doc.applicationNumber,
     status: doc.status,
     name: doc.name,
+    gender: doc.gender ?? null,
     fatherName: doc.fatherName,
-    husbandName: doc.husbandName,
+    spouseName: doc.spouseName,
     surname: doc.surname,
     caste: doc.caste,
     religion: doc.religion,

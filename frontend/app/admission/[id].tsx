@@ -22,8 +22,9 @@ interface AdmissionDetail {
   applicationNumber: string;
   status: string;
   name: string;
+  gender: string | null;
   fatherName: string;
-  husbandName: string;
+  spouseName: string;
   surname: string;
   caste: string;
   religion: string;
@@ -225,8 +226,9 @@ export default function AdmissionDetailScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('admission.sectionPersonal')}</Text>
           <View style={styles.fieldRow}><Text style={styles.fieldLabel}>{t('admission.name')}</Text><Text style={styles.fieldValue}>{row.name}</Text></View>
+          <View style={styles.fieldRow}><Text style={styles.fieldLabel}>{t('admission.gender')}</Text><Text style={styles.fieldValue}>{row.gender ? t(`admission.${row.gender}`) : '—'}</Text></View>
           <View style={styles.fieldRow}><Text style={styles.fieldLabel}>{t('admission.fatherName')}</Text><Text style={styles.fieldValue}>{row.fatherName || '—'}</Text></View>
-          <View style={styles.fieldRow}><Text style={styles.fieldLabel}>{t('admission.husbandName')}</Text><Text style={styles.fieldValue}>{row.husbandName || '—'}</Text></View>
+          <View style={styles.fieldRow}><Text style={styles.fieldLabel}>{t('admission.spouseName')}</Text><Text style={styles.fieldValue}>{row.spouseName || '—'}</Text></View>
           <View style={styles.fieldRow}><Text style={styles.fieldLabel}>{t('admission.surname')}</Text><Text style={styles.fieldValue}>{row.surname || '—'}</Text></View>
           <View style={styles.fieldRow}><Text style={styles.fieldLabel}>{t('admission.caste')}</Text><Text style={styles.fieldValue}>{row.caste || '—'}</Text></View>
           <View style={styles.fieldRow}><Text style={styles.fieldLabel}>{t('admission.religion')}</Text><Text style={styles.fieldValue}>{row.religion || '—'}</Text></View>

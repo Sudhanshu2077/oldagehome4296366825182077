@@ -17,8 +17,12 @@ export type AdmissionLabelKey =
   | 'sectionFinalDeclaration'
   | 'sectionCommittee'
   | 'name'
+  | 'gender'
+  | 'male'
+  | 'female'
+  | 'other'
   | 'fatherName'
-  | 'husbandName'
+  | 'spouseName'
   | 'surname'
   | 'caste'
   | 'religion'
@@ -93,8 +97,12 @@ const L = {
   sectionFinalDeclaration: { mr: 'ह अंतिम सत्य घोषणा', hi: 'ज अंतिम सत्य घोषणा', en: 'H. Final Truth Declaration' },
   sectionCommittee: { mr: 'प्रवेश समिती निर्णय', hi: 'प्रवेश समिति निर्णय', en: 'Admission Committee Decision' },
   name: { mr: 'नाव', hi: 'नाम', en: 'Name' },
+  gender: { mr: 'लिंग', hi: 'लिंग', en: 'Gender' },
+  male: { mr: 'पुरुष', hi: 'पुरुष', en: 'Male' },
+  female: { mr: 'स्त्री', hi: 'महिला', en: 'Female' },
+  other: { mr: 'इतर', hi: 'अन्य', en: 'Other' },
   fatherName: { mr: 'वडिलांचे नाव', hi: 'पिता का नाम', en: "Father's Name" },
-  husbandName: { mr: 'पतीचे नाव', hi: 'पति का नाम', en: "Husband's Name" },
+  spouseName: { mr: 'पती / पत्नीचे नाव', hi: 'पति / पत्नी का नाम', en: "Husband/Wife's Name" },
   surname: { mr: 'आडनाव', hi: 'उपनाम', en: 'Surname' },
   caste: { mr: 'जात', hi: 'जाति', en: 'Caste' },
   religion: { mr: 'धर्म', hi: 'धर्म', en: 'Religion' },

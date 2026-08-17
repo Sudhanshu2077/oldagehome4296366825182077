@@ -40,8 +40,9 @@ export default function AdmissionNewScreen() {
   const [error, setError] = useState<string | null>(null);
 
   const [name, setName] = useState('');
+  const [gender, setGender] = useState('');
   const [fatherName, setFatherName] = useState('');
-  const [husbandName, setHusbandName] = useState('');
+  const [spouseName, setSpouseName] = useState('');
   const [surname, setSurname] = useState('');
   const [caste, setCaste] = useState('');
   const [religion, setReligion] = useState('');
@@ -120,7 +121,7 @@ export default function AdmissionNewScreen() {
   function buildBody(): Record<string, unknown> {
     const clean = (r: Relative): Record<string, unknown> => ({ name: r.name, age: r.age === '' ? null : Number(r.age), relation: r.relation, phone: r.phone });
     return {
-      name, fatherName, husbandName, surname, caste, religion, address, village, taluka, district,
+      name, gender, fatherName, spouseName, surname, caste, religion, address, village, taluka, district,
       admissionDate: admissionDate || null,
       currentAge: currentAge === '' ? null : Number(currentAge),
       idProofNumber,
@@ -234,12 +235,22 @@ export default function AdmissionNewScreen() {
             <TextInput style={styles.input} value={name} onChangeText={setName} placeholder={t('admission.name')} placeholderTextColor={palette.textMuted} />
           </View>
           <View style={styles.field}>
+            <Text style={styles.label}>{t('admission.gender')}</Text>
+            <View style={styles.chipRow}>
+              {(['male', 'female', 'other'] as const).map((g) => (
+                <TouchableOpacity key={g} style={[styles.chip, gender === g && styles.chipActive]} onPress={() => setGender(g)}>
+                  <Text style={[styles.chipText, gender === g && styles.chipTextActive]}>{t(`admission.${g}`)}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+          <View style={styles.field}>
             <Text style={styles.label}>{t('admission.fatherName')}</Text>
             <TextInput style={styles.input} value={fatherName} onChangeText={setFatherName} placeholder={t('admission.fatherName')} placeholderTextColor={palette.textMuted} />
           </View>
           <View style={styles.field}>
-            <Text style={styles.label}>{t('admission.husbandName')}</Text>
-            <TextInput style={styles.input} value={husbandName} onChangeText={setHusbandName} placeholder={t('admission.husbandName')} placeholderTextColor={palette.textMuted} />
+            <Text style={styles.label}>{t('admission.spouseName')}</Text>
+            <TextInput style={styles.input} value={spouseName} onChangeText={setSpouseName} placeholder={t('admission.spouseName')} placeholderTextColor={palette.textMuted} />
           </View>
           <View style={styles.field}>
             <Text style={styles.label}>{t('admission.surname')}</Text>
