@@ -8,7 +8,7 @@ import { normalizePageQuery } from '../../../kernel/pagination/pagination.js';
 export const REGISTER_TITLES: Record<RegisterScopeId, { en: string; mr: string }> = {
   R1: { en: 'Admission Register', mr: 'प्रवेश नोंदवही' },
   R2: { en: '', mr: '' },
-  R3: { en: '', mr: '' },
+  R3: { en: 'INWARD REGISTER', mr: 'आवक रजिस्टर' },
   R4: { en: '', mr: '' },
   R5: { en: '', mr: '' },
   R6: { en: 'VISIT BOOK', mr: 'अभिप्राय बुक' },

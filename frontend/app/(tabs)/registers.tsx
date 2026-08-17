@@ -68,6 +68,8 @@ export default function RegistersScreen() {
               router.push('/admission/list');
             } else if (item.id === 'R6') {
               router.push('/visit-book/list');
+            } else if (item.id === 'R3') {
+              router.push('/inward/list');
             } else {
               router.push({ pathname: '/register/[id]', params: { id: item.id, title: item.title } });
             }
