@@ -146,6 +146,9 @@ export class AdmissionService {
     const encrypted = aadhaarRaw ? encryptAadhaar(aadhaarRaw) : { enc: '', last4: '' };
     const name = String(body.name ?? '').trim();
     if (!name) throw new ValidationError('name is required');
+    if (body.gender && body.gender !== 'male' && body.gender !== 'female' && body.gender !== 'other') {
+      throw new ValidationError('gender must be male, female or other');
+    }
 
     const { aadhaar, phone, currentAge, ...rest } = body;
     const { number } = await this.repo.nextApplicationNumber(tenantId);
