@@ -73,6 +73,7 @@ The Phase 1 design prompt mandated NestJS + Prisma + PostgreSQL + Flutter + raw 
 7. Build in the cadence the user asks for. The current cadence is Phase 1 → 5 (5 prompts), NOT the old Step-by-step.
 8. The user has said: **do NOT run tests / typecheck / lint until they explicitly ask for full-app testing.** Just build. Verification happens at the end.
 9. Every module must contain, as applicable: controller, service, repository, DTO, validation, entity/model, routes, module-level Fastify plugin. All APIs must be Swagger-documented.
+10. **Client standing instruction: after ANY change the user asks for, update ALL of: git (commit + push to `master`), Vercel (frontend — auto-deploys on push), and Render (backend — auto-deploys on push; set env vars via the Render API if the change needs them). Verify each deploy is live (Vercel `vercel ls --prod` shows Ready; Render deploy status `live`) before reporting done.**
 
 ## 5. Roles & permissions
 ### Two-tier hierarchy (Phase 1 model)
