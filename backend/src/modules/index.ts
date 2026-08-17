@@ -13,6 +13,7 @@ import { activityLogModule } from './activity-log/index.js';
 import { dashboardModule } from './dashboard/index.js';
 import { registerModule } from './registers/index.js';
 import { admissionModule } from './admission/index.js';
+import { visitBookModule } from './visit-book/index.js';
 import { inquiriesModule } from './inquiries/routes/index.js';
 import { announcementsModule } from './announcements/routes/index.js';
 import { eventsModule } from './events/routes/index.js';
@@ -39,6 +40,7 @@ const modules: FastifyPluginAsync[] = [
   dashboardModule,
   registerModule,
   admissionModule,
+  visitBookModule,
   inquiriesModule,
   announcementsModule,
   eventsModule,

@@ -66,14 +66,16 @@ export default function RegistersScreen() {
           onPress={() => {
             if (item.id === 'R1') {
               router.push('/admission/list');
+            } else if (item.id === 'R6') {
+              router.push('/visit-book/list');
             } else {
               router.push({ pathname: '/register/[id]', params: { id: item.id, title: item.title } });
             }
           }}
         >
           <Text style={styles.tileId}>{item.id}</Text>
-          <Text style={styles.tileTitle}>{item.title}</Text>
-          <Text style={styles.tileTitleMr}>{item.titleMr}</Text>
+          <Text style={styles.tileTitle}>{item.title || 'Register details pending'}</Text>
+          <Text style={styles.tileTitleMr}>{item.titleMr || ''}</Text>
         </TouchableOpacity>
       )}
     />

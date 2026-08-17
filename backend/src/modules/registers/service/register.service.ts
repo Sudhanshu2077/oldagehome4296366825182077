@@ -6,19 +6,19 @@ import { assertTenantWriteAccess, resolvedTenantId } from '../../../plugins/tena
 import { normalizePageQuery } from '../../../kernel/pagination/pagination.js';
 
 export const REGISTER_TITLES: Record<RegisterScopeId, { en: string; mr: string }> = {
-  R1: { en: 'Admission Register', mr: 'प्रवेश नोंदवही' },
-  R2: { en: 'Discharge Register', mr: 'डिस्चार्ज नोंदवही' },
-  R3: { en: 'Medical Register', mr: 'वैद्यकीय नोंदवही' },
-  R4: { en: 'Medicine Register', mr: 'औषध नोंदवही' },
-  R5: { en: 'Diet Register', mr: 'आहार नोंदवही' },
-  R6: { en: 'Visitor Register', mr: 'भेटीची नोंदवही' },
-  R7: { en: 'Donation Register', mr: 'देणगी नोंदवही' },
-  R8: { en: 'Expense Register', mr: 'खर्च नोंदवही' },
-  R9: { en: 'Staff Attendance Register', mr: 'कर्मचारी उपस्थिती नोंदवही' },
-  R10: { en: 'Asset Register', mr: 'मालमत्ता नोंदवही' },
-  R11: { en: 'Grievance Register', mr: 'तक्रार नोंदवही' },
-  R12: { en: 'Death Register', mr: 'मृत्यू नोंदवही' },
-  R13: { en: 'Miscellaneous Register', mr: 'इतर नोंदवही' },
+  R1: { en: '', mr: '' },
+  R2: { en: '', mr: '' },
+  R3: { en: '', mr: '' },
+  R4: { en: '', mr: '' },
+  R5: { en: '', mr: '' },
+  R6: { en: 'VISIT BOOK', mr: 'अभिप्राय बुक' },
+  R7: { en: '', mr: '' },
+  R8: { en: '', mr: '' },
+  R9: { en: '', mr: '' },
+  R10: { en: '', mr: '' },
+  R11: { en: '', mr: '' },
+  R12: { en: '', mr: '' },
+  R13: { en: '', mr: '' },
 };
 
 export class RegisterService {
