@@ -114,9 +114,9 @@ export class DistributionService {
     throw new ForbiddenError('distribution register access denied');
   }
 
-  private async deductStock(tenantId: string, row: DistributionEntryRow, override: boolean): Promise<{ field: string; name: string; remaining: number }[]> {
+  private async deductStock(tenantId: string, row: DistributionEntryRow, override: boolean): Promise<{ field: string; name: string; qty: number; remaining: number }[]> {
     const ErpItems = mongooseModel<Document>('Erp_inventory-items');
-    const deductions: { field: string; name: string; remaining: number }[] = [];
+    const deductions: { field: string; name: string; qty: number; remaining: number }[] = [];
     for (const item of ITEM_FIELDS) {
       const qty = row[item.key as keyof DistributionEntryRow] as number;
       if (!qty) continue;
@@ -128,7 +128,7 @@ export class DistributionService {
         throw new ValidationError(`insufficient stock for ${String(r.name)}: available ${currentStock}, required ${qty}. An authorized override is required.`);
       }
       await ErpItems.updateOne({ _id: r._id }, { $inc: { currentStock: -qty } });
-      deductions.push({ field: item.key, name: String(r.name), remaining: Math.max(0, currentStock - qty) });
+      deductions.push({ field: item.key, name: String(r.name), qty, remaining: Math.max(0, currentStock - qty) });
     }
     return deductions;
   }
@@ -277,7 +277,7 @@ export class DistributionService {
       reviewedAt: new Date(),
       finalizedBy: req.sessionUser!.userId,
       finalizedAt: new Date(),
-      remarks: deductions.length > 0 ? `${String(existing.remarks)} | ${deductions.map((d) => `${d.name}: -${d.field}`).join('; ')}` : existing.remarks,
+      remarks: deductions.length > 0 ? `${String(existing.remarks)} | ${deductions.map((d) => `${d.name}: -${d.qty}`).join('; ')}` : existing.remarks,
     });
     if (!updated) throw new NotFoundError('distribution entry not found');
     await app.auditHook(req, 'finalize', 'distribution', id);
