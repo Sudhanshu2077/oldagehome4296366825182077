@@ -63,7 +63,13 @@ export default function RegistersScreen() {
       renderItem={({ item }) => (
         <TouchableOpacity
           style={styles.tile}
-          onPress={() => router.push({ pathname: '/register/[id]', params: { id: item.id, title: item.title } })}
+          onPress={() => {
+            if (item.id === 'R1') {
+              router.push('/admission/list');
+            } else {
+              router.push({ pathname: '/register/[id]', params: { id: item.id, title: item.title } });
+            }
+          }}
         >
           <Text style={styles.tileId}>{item.id}</Text>
           <Text style={styles.tileTitle}>{item.title}</Text>

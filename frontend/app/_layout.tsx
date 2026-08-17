@@ -30,6 +30,9 @@ function NavShell() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="register/[id]" options={{ headerShown: true, title: 'Register' }} />
         <Stack.Screen name="module/[code]" options={{ headerShown: true, title: 'Module' }} />
+        <Stack.Screen name="admission/list" options={{ headerShown: true, title: 'Admission Register' }} />
+        <Stack.Screen name="admission/new" options={{ headerShown: true, title: 'New Admission Application' }} />
+        <Stack.Screen name="admission/[id]" options={{ headerShown: true, title: 'Admission Application' }} />
       </Stack>
       <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />
     </NavThemeProvider>
