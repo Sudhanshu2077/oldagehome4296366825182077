@@ -39,6 +39,9 @@ function NavShell() {
         <Stack.Screen name="inward/list" options={{ headerShown: true, title: 'INWARD REGISTER' }} />
         <Stack.Screen name="inward/new" options={{ headerShown: true, title: 'New Entry' }} />
         <Stack.Screen name="inward/[id]" options={{ headerShown: true, title: 'Entry Details' }} />
+        <Stack.Screen name="employee-inout/list" options={{ headerShown: true, title: 'EMPLOYEE IN OUT REGISTER' }} />
+        <Stack.Screen name="employee-inout/new" options={{ headerShown: true, title: 'New Entry' }} />
+        <Stack.Screen name="employee-inout/[id]" options={{ headerShown: true, title: 'Entry Details' }} />
       </Stack>
       <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />
     </NavThemeProvider>

@@ -70,6 +70,8 @@ export default function RegistersScreen() {
               router.push('/visit-book/list');
             } else if (item.id === 'R3') {
               router.push('/inward/list');
+            } else if (item.id === 'R4') {
+              router.push('/employee-inout/list');
             } else {
               router.push({ pathname: '/register/[id]', params: { id: item.id, title: item.title } });
             }
