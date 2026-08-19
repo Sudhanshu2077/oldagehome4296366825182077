@@ -14,7 +14,7 @@ interface RegisterInfo {
 
 export default function RegistersScreen() {
   const { palette } = useTheme();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const [registers, setRegisters] = useState<RegisterInfo[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -92,8 +92,8 @@ export default function RegistersScreen() {
           }}
         >
           <Text style={styles.tileId}>{item.id}</Text>
-          <Text style={styles.tileTitle}>{item.title || 'Register details pending'}</Text>
-          <Text style={styles.tileTitleMr}>{item.titleMr || ''}</Text>
+          <Text style={styles.tileTitle}>{item.title || t('register.noEntries')}</Text>
+          {lang === 'mr' && item.titleMr ? <Text style={styles.tileTitleMr}>{item.titleMr}</Text> : null}
         </TouchableOpacity>
       )}
     />

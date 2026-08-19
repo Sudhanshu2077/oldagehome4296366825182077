@@ -56,7 +56,7 @@ export default function DonorScreen() {
         frequency: residentForm.frequency,
         notes: residentForm.notes,
       });
-      setSuccess('Resident sponsorship pledge saved');
+      setSuccess(t('donor.residentPledge'));
       setResidentForm({ amount: '', frequency: '', notes: '' });
     } catch (err) {
       setError(errorMessage(err));
@@ -74,7 +74,7 @@ export default function DonorScreen() {
         frequency: mealsForm.frequency,
         notes: mealsForm.notes,
       });
-      setSuccess('Meals sponsorship pledge saved');
+      setSuccess(t('donor.mealsPledge'));
       setMealsForm({ amount: '', frequency: '', notes: '' });
     } catch (err) {
       setError(errorMessage(err));

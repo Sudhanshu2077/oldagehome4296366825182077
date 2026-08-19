@@ -7,39 +7,37 @@ import { useI18n } from '../../src/i18n';
 
 interface ReportMeta {
   key: string;
-  label: string;
-  labelMr: string;
   endpoint: string;
 }
 
 const REPORTS: ReportMeta[] = [
-  { key: 'admissions', label: 'Admissions', labelMr: 'प्रवेश', endpoint: '/reports/admissions' },
-  { key: 'discharges', label: 'Discharges', labelMr: 'डिस्चार्ज', endpoint: '/reports/discharges' },
-  { key: 'deaths', label: 'Deaths', labelMr: 'मृत्यू', endpoint: '/reports/deaths' },
-  { key: 'medical', label: 'Medical', labelMr: 'वैद्यकीय', endpoint: '/reports/medical' },
-  { key: 'medicine', label: 'Medicine', labelMr: 'औषध', endpoint: '/reports/medicine' },
-  { key: 'attendance', label: 'Attendance', labelMr: 'उपस्थिती', endpoint: '/reports/attendance' },
-  { key: 'kitchen', label: 'Kitchen', labelMr: 'स्वयंपाक', endpoint: '/reports/kitchen' },
-  { key: 'diet', label: 'Diet', labelMr: 'आहार', endpoint: '/reports/diet' },
-  { key: 'laundry', label: 'Laundry', labelMr: 'धुलाई', endpoint: '/reports/laundry' },
-  { key: 'housekeeping', label: 'Housekeeping', labelMr: 'घरकाम', endpoint: '/reports/housekeeping' },
-  { key: 'incidents', label: 'Incidents', labelMr: 'घटना', endpoint: '/reports/incidents' },
-  { key: 'visitors', label: 'Visitors', labelMr: 'भेटी', endpoint: '/reports/visitors' },
-  { key: 'emergencies', label: 'Emergencies', labelMr: 'आपत्काल', endpoint: '/reports/emergencies' },
-  { key: 'monthly', label: 'Monthly', labelMr: 'मासिक', endpoint: '/reports/monthly' },
-  { key: 'finance', label: 'Finance', labelMr: 'वित्त', endpoint: '/reports/finance' },
-  { key: 'ledger', label: 'Ledger', labelMr: 'खाती', endpoint: '/reports/ledger' },
-  { key: 'donations', label: 'Donations', labelMr: 'देणगी', endpoint: '/reports/donations' },
-  { key: 'inventory', label: 'Inventory', labelMr: 'साठा', endpoint: '/reports/inventory' },
-  { key: 'assets', label: 'Assets', labelMr: 'मालमत्ता', endpoint: '/reports/assets' },
-  { key: 'payroll', label: 'Payroll', labelMr: 'वेतनपत्र', endpoint: '/reports/payroll' },
-  { key: 'complaints', label: 'Complaints', labelMr: 'तक्रारी', endpoint: '/reports/complaints' },
-  { key: 'audits', label: 'Audits', labelMr: 'लेखापरीक्षण', endpoint: '/reports/audits' },
+  { key: 'admissions', endpoint: '/reports/admissions' },
+  { key: 'discharges', endpoint: '/reports/discharges' },
+  { key: 'deaths', endpoint: '/reports/deaths' },
+  { key: 'medical', endpoint: '/reports/medical' },
+  { key: 'medicine', endpoint: '/reports/medicine' },
+  { key: 'attendance', endpoint: '/reports/attendance' },
+  { key: 'kitchen', endpoint: '/reports/kitchen' },
+  { key: 'diet', endpoint: '/reports/diet' },
+  { key: 'laundry', endpoint: '/reports/laundry' },
+  { key: 'housekeeping', endpoint: '/reports/housekeeping' },
+  { key: 'incidents', endpoint: '/reports/incidents' },
+  { key: 'visitors', endpoint: '/reports/visitors' },
+  { key: 'emergencies', endpoint: '/reports/emergencies' },
+  { key: 'monthly', endpoint: '/reports/monthly' },
+  { key: 'finance', endpoint: '/reports/finance' },
+  { key: 'ledger', endpoint: '/reports/ledger' },
+  { key: 'donations', endpoint: '/reports/donations' },
+  { key: 'inventory', endpoint: '/reports/inventory' },
+  { key: 'assets', endpoint: '/reports/assets' },
+  { key: 'payroll', endpoint: '/reports/payroll' },
+  { key: 'complaints', endpoint: '/reports/complaints' },
+  { key: 'audits', endpoint: '/reports/audits' },
 ];
 
 export default function ReportsScreen() {
   const { palette } = useTheme();
-  const { t, lang } = useI18n();
+  const { t } = useI18n();
   const [selected, setSelected] = useState<ReportMeta | null>(null);
   const [data, setData] = useState<unknown>(null);
   const [loading, setLoading] = useState(false);
@@ -83,7 +81,7 @@ export default function ReportsScreen() {
     if (typeof v === 'number') return String(v);
     if (typeof v === 'string') return v;
     if (typeof v === 'boolean') return v ? t('common.yes') : t('common.no');
-    if (Array.isArray(v)) return `${v.length} item(s)`;
+    if (Array.isArray(v)) return `${v.length} ${t('reports.items')}`;
     return JSON.stringify(v).slice(0, 80);
   }
 
@@ -124,7 +122,7 @@ export default function ReportsScreen() {
     );
   }
 
-  const selectedLabel = selected ? (lang === 'en' ? selected.label : (selected.labelMr || selected.label)) : t('reports.selectReport');
+  const selectedLabel = selected ? t(`reports.${selected.key}`) : t('reports.selectReport');
 
   return (
     <View style={styles.container}>
@@ -135,7 +133,7 @@ export default function ReportsScreen() {
           keyExtractor={(r) => r.key}
           contentContainerStyle={{ padding: spacing.sm }}
           renderItem={({ item }) => {
-            const label = lang === 'en' ? item.label : (item.labelMr || item.label);
+            const label = t(`reports.${item.key}`);
             return (
               <TouchableOpacity
                 style={[styles.reportItem, selected?.key === item.key && styles.reportItemActive]}
@@ -144,7 +142,6 @@ export default function ReportsScreen() {
                 <Text style={[styles.reportText, selected?.key === item.key && styles.reportTextActive]}>
                   {label}
                 </Text>
-                <Text style={[styles.reportSub, selected?.key === item.key && styles.reportTextActive]}>{item.label}</Text>
               </TouchableOpacity>
             );
           }}

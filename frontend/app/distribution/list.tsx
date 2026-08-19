@@ -161,8 +161,8 @@ export default function DistributionListScreen() {
     }
   }
 
-  const officeName = lang === 'en' || !header ? header?.officeName ?? '' : (header.officeNameMr || header.officeName);
-  const displayTitle = lang === 'en' ? t('dist.title') : t('dist.titleMr');
+  const officeName = lang === 'mr' ? ((header?.officeNameMr || header?.officeName) ?? '') : (header?.officeName ?? '');
+  const displayTitle = t(lang === 'mr' ? 'dist.titleMr' : 'dist.title');
 
   if (loading && page === 1 && rows.length === 0) {
     return <View style={styles.center}><ActivityIndicator size="large" color={palette.primary} /></View>;

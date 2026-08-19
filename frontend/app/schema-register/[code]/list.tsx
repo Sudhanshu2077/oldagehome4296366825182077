@@ -241,7 +241,7 @@ export default function SchemaRegisterListScreen() {
   }
 
   const displayTitle = lang === 'en' || !title ? title?.en ?? '' : (lang === 'mr' ? title?.mr : title?.hi);
-  const officeName = lang === 'en' || !header ? header?.officeName ?? '' : (header.officeNameMr || header.officeName);
+  const officeName = lang === 'mr' ? ((header?.officeNameMr || header?.officeName) ?? '') : (header?.officeName ?? '');
 
   if (loading && page === 1 && rows.length === 0) {
     return <View style={styles.center}><ActivityIndicator size="large" color={palette.primary} /></View>;

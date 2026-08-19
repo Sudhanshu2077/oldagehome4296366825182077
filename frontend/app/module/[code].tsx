@@ -17,6 +17,7 @@ import { useAuth } from '../../src/auth/AuthContext';
 import { spacing, radii } from '../../src/config/theme';
 import { useTheme } from '../../src/config/ThemeContext';
 import { useI18n } from '../../src/i18n';
+import { fieldKeyToI18n } from '../../src/i18n/fieldKeys';
 
 interface ModuleField {
   key: string;
@@ -177,12 +178,17 @@ export default function ModuleScreen() {
 
   const statusField = meta.workflow?.field ?? 'status';
 
+  function fieldLabel(f: ModuleField): string {
+    if (lang === 'mr' && f.labelMr) return f.labelMr;
+    return t(fieldKeyToI18n(f.key), f.label);
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
         <View>
-          <Text style={styles.title}>{lang === 'en' ? meta.title : (meta.titleMr || meta.title)}</Text>
-          <Text style={styles.subtitle}>{meta.title}</Text>
+          <Text style={styles.title}>{t(`mod.${code}`, meta.title)}</Text>
+          <Text style={styles.subtitle}>{code}</Text>
         </View>
         <TouchableOpacity style={styles.addButton} onPress={openCreate}>
           <Text style={styles.addButtonText}>{t('module.new')}</Text>
@@ -203,7 +209,7 @@ export default function ModuleScreen() {
         <View style={{ flex: 1 }}>
           <View style={[styles.row, styles.headRow]}>
             {displayFields.map((f) => (
-              <Text key={f.key} style={[styles.cell, styles.headCell]}>{f.label}</Text>
+              <Text key={f.key} style={[styles.cell, styles.headCell]}>{fieldLabel(f)}</Text>
             ))}
             <Text style={[styles.cell, styles.headCell]}>{t('module.actions')}</Text>
           </View>
@@ -240,11 +246,11 @@ export default function ModuleScreen() {
       <Modal visible={modalOpen} animationType="slide" transparent>
         <View style={styles.modalBackdrop}>
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>{editing ? t('module.edit') : t('module.new')} — {meta.title}</Text>
+            <Text style={styles.modalTitle}>{editing ? t('module.edit') : t('module.new')} — {t(`mod.${code}`, meta.title)}</Text>
             <ScrollView style={{ maxHeight: 420 }}>
               {(meta.fields ?? []).map((f) => (
                 <View key={f.key} style={{ marginBottom: spacing.md }}>
-                  <Text style={styles.fieldLabel}>{f.label}{f.required ? ' *' : ''}</Text>
+                  <Text style={styles.fieldLabel}>{fieldLabel(f)}{f.required ? ' *' : ''}</Text>
                   {f.enum ? (
                     <View style={styles.enumRow}>
                       {f.enum.map((opt) => (
@@ -275,7 +281,7 @@ export default function ModuleScreen() {
                       value={form[f.key] ?? ''}
                       onChangeText={(v) => setForm((prev) => ({ ...prev, [f.key]: v }))}
                       keyboardType={f.type === 'number' ? 'numeric' : 'default'}
-                      placeholder={f.type === 'date' ? 'YYYY-MM-DD' : f.label}
+                      placeholder={f.type === 'date' ? 'YYYY-MM-DD' : fieldLabel(f)}
                       placeholderTextColor={palette.textMuted}
                       multiline={f.type === 'text'}
                     />

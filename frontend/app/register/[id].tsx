@@ -20,6 +20,7 @@ import { useAuth } from '../../src/auth/AuthContext';
 import { spacing, radii } from '../../src/config/theme';
 import { useTheme } from '../../src/config/ThemeContext';
 import { useI18n } from '../../src/i18n';
+import { fieldKeyToI18n } from '../../src/i18n/fieldKeys';
 
 interface RegisterEntry {
   id: string;
@@ -30,20 +31,20 @@ interface RegisterEntry {
   updatedAt: string;
 }
 
-const FIELD_DEFS: Record<string, { key: string; label: string }[]> = {
-  R1: [{ key: 'date', label: 'Date' }, { key: 'residentName', label: 'Resident Name' }, { key: 'age', label: 'Age' }, { key: 'guardian', label: 'Guardian' }, { key: 'notes', label: 'Notes' }],
-  R2: [{ key: 'date', label: 'Date' }, { key: 'residentName', label: 'Resident Name' }, { key: 'reason', label: 'Reason' }, { key: 'notes', label: 'Notes' }],
-  R3: [{ key: 'date', label: 'Date' }, { key: 'residentName', label: 'Resident Name' }, { key: 'diagnosis', label: 'Diagnosis' }, { key: 'doctor', label: 'Doctor' }, { key: 'notes', label: 'Notes' }],
-  R4: [{ key: 'date', label: 'Date' }, { key: 'medicine', label: 'Medicine' }, { key: 'quantity', label: 'Quantity' }, { key: 'residentName', label: 'Resident' }, { key: 'notes', label: 'Notes' }],
-  R5: [{ key: 'date', label: 'Date' }, { key: 'meal', label: 'Meal' }, { key: 'menu', label: 'Menu' }, { key: 'notes', label: 'Notes' }],
-  R6: [{ key: 'date', label: 'Date' }, { key: 'visitorName', label: 'Visitor' }, { key: 'residentName', label: 'Resident' }, { key: 'purpose', label: 'Purpose' }],
-  R7: [{ key: 'date', label: 'Date' }, { key: 'donor', label: 'Donor' }, { key: 'amount', label: 'Amount' }, { key: 'type', label: 'Type' }, { key: 'notes', label: 'Notes' }],
-  R8: [{ key: 'date', label: 'Date' }, { key: 'particulars', label: 'Particulars' }, { key: 'amount', label: 'Amount' }, { key: 'approvedBy', label: 'Approved By' }],
-  R9: [{ key: 'date', label: 'Date' }, { key: 'staffName', label: 'Staff' }, { key: 'shift', label: 'Shift' }, { key: 'status', label: 'Status' }],
-  R10: [{ key: 'date', label: 'Date' }, { key: 'item', label: 'Item' }, { key: 'quantity', label: 'Qty' }, { key: 'condition', label: 'Condition' }],
-  R11: [{ key: 'date', label: 'Date' }, { key: 'complainant', label: 'Complainant' }, { key: 'complaint', label: 'Complaint' }, { key: 'status', label: 'Status' }],
-  R12: [{ key: 'date', label: 'Date' }, { key: 'residentName', label: 'Resident' }, { key: 'cause', label: 'Cause' }, { key: 'notes', label: 'Notes' }],
-  R13: [{ key: 'date', label: 'Date' }, { key: 'particulars', label: 'Particulars' }, { key: 'notes', label: 'Notes' }],
+const FIELD_DEFS: Record<string, string[]> = {
+  R1: ['date', 'residentName', 'age', 'guardian', 'notes'],
+  R2: ['date', 'residentName', 'reason', 'notes'],
+  R3: ['date', 'residentName', 'diagnosis', 'doctor', 'notes'],
+  R4: ['date', 'medicine', 'quantity', 'residentName', 'notes'],
+  R5: ['date', 'meal', 'menu', 'notes'],
+  R6: ['date', 'visitorName', 'residentName', 'purpose'],
+  R7: ['date', 'donor', 'amount', 'type', 'notes'],
+  R8: ['date', 'particulars', 'amount', 'approvedBy'],
+  R9: ['date', 'staffName', 'shift', 'status'],
+  R10: ['date', 'item', 'quantity', 'condition'],
+  R11: ['date', 'complainant', 'complaint', 'status'],
+  R12: ['date', 'residentName', 'cause', 'notes'],
+  R13: ['date', 'particulars', 'notes'],
 };
 
 export default function RegisterEntriesScreen() {
@@ -131,7 +132,7 @@ export default function RegisterEntriesScreen() {
   function openEdit(entry: RegisterEntry) {
     setEditing(entry);
     const next: Record<string, string> = {};
-    for (const f of fields) next[f.key] = String(entry.fields[f.key] ?? '');
+    for (const f of fields) next[f] = String(entry.fields[f] ?? '');
     setForm(next);
     setModalOpen(true);
   }
@@ -180,7 +181,7 @@ export default function RegisterEntriesScreen() {
           <View style={[styles.row, styles.headRow]}>
             <Text style={[styles.cell, styles.headCell, { width: 150 }]}>{t('register.entryNo')}</Text>
             {fields.map((f) => (
-              <Text key={f.key} style={[styles.cell, styles.headCell]}>{f.label}</Text>
+              <Text key={f} style={[styles.cell, styles.headCell]}>{t(fieldKeyToI18n(f))}</Text>
             ))}
             {canWrite ? <Text style={[styles.cell, styles.headCell, { width: 130 }]}>{t('register.actions')}</Text> : null}
           </View>
@@ -192,7 +193,7 @@ export default function RegisterEntriesScreen() {
               <View style={styles.row}>
                 <Text style={[styles.cell, { width: 150 }]}>{item.entryNumber}</Text>
                 {fields.map((f) => (
-                  <Text key={f.key} style={styles.cell}>{String(item.fields[f.key] ?? '')}</Text>
+                  <Text key={f} style={styles.cell}>{String(item.fields[f] ?? '')}</Text>
                 ))}
                 {canWrite ? (
                   <View style={[styles.cell, { width: 130, flexDirection: 'row', gap: 12 }]}>
@@ -212,13 +213,13 @@ export default function RegisterEntriesScreen() {
             <Text style={styles.modalTitle}>{editing ? t('register.editEntry') : t('register.newEntry')}</Text>
             <ScrollView style={{ maxHeight: 400 }}>
               {fields.map((f) => (
-                <View key={f.key} style={{ marginBottom: spacing.md }}>
-                  <Text style={styles.fieldLabel}>{f.label}</Text>
+                <View key={f} style={{ marginBottom: spacing.md }}>
+                  <Text style={styles.fieldLabel}>{t(fieldKeyToI18n(f))}</Text>
                   <TextInput
                     style={styles.input}
-                    value={form[f.key] ?? ''}
-                    onChangeText={(v) => setForm((prev) => ({ ...prev, [f.key]: v }))}
-                    placeholder={f.label}
+                    value={form[f] ?? ''}
+                    onChangeText={(v) => setForm((prev) => ({ ...prev, [f]: v }))}
+                    placeholder={t(fieldKeyToI18n(f))}
                     placeholderTextColor={palette.textMuted}
                   />
                 </View>

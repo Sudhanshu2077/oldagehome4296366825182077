@@ -3,6 +3,7 @@ import { Modal, View, Text, TouchableOpacity, StyleSheet, Platform } from 'react
 import { Feather } from '@expo/vector-icons';
 import { useTheme } from '../config/ThemeContext';
 import { spacing, radii } from '../config/theme';
+import { useI18n } from '../i18n';
 
 const DAYS = [0, 1, 2, 3, 4, 5, 6];
 
@@ -30,6 +31,7 @@ interface CalendarPickerProps {
 
 export function CalendarPicker({ visible, initialDate, locale, onClose, onSelect }: CalendarPickerProps) {
   const { palette } = useTheme();
+  const { t } = useI18n();
   const parsed = useMemo(() => parseDate(initialDate), [initialDate]);
   const today = useMemo(() => {
     const now = new Date();
@@ -250,11 +252,11 @@ export function CalendarPicker({ visible, initialDate, locale, onClose, onSelect
           {picking === 'date' ? renderDateView() : picking === 'year' ? renderYearView() : renderMonthView()}
           <View style={styles.footer}>
             <TouchableOpacity style={styles.footerBtn} onPress={onClose} activeOpacity={0.7}>
-              <Text style={[styles.footerBtnText, { color: palette.textMuted }]}>Cancel</Text>
+              <Text style={[styles.footerBtnText, { color: palette.textMuted }]}>{t('common.cancel')}</Text>
             </TouchableOpacity>
             {picking !== 'date' ? (
               <TouchableOpacity style={styles.footerBtn} onPress={() => setPicking('date')} activeOpacity={0.7}>
-                <Text style={[styles.footerBtnText, { color: palette.primary }]}>OK</Text>
+                <Text style={[styles.footerBtnText, { color: palette.primary }]}>{t('common.ok')}</Text>
               </TouchableOpacity>
             ) : null}
           </View>

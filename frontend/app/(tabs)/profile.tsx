@@ -22,7 +22,7 @@ export default function ProfileScreen() {
   function clearCache() {
     Alert.alert(t('settings.clearCache'), t('settings.clearCacheHint'), [
       { text: t('common.cancel'), style: 'cancel' },
-      { text: t('common.save'), onPress: () => Alert.alert(t('settings.clearCache'), 'OK') },
+      { text: t('common.ok'), onPress: () => Alert.alert(t('settings.clearCache'), t('settings.cacheCleared')) },
     ]);
   }
 
@@ -81,7 +81,7 @@ export default function ProfileScreen() {
       </View>
 
       <View style={styles.section}>
-        <Text style={[styles.sectionLabel, { color: palette.textMuted }]}>{'ACCOUNT'}</Text>
+        <Text style={[styles.sectionLabel, { color: palette.textMuted }]}>{t('settings.account')}</Text>
         <View style={[styles.card, { backgroundColor: palette.surface, borderColor: palette.border }]}>
           <View style={[styles.row, { borderBottomColor: palette.borderSoft }]}>
             <Text style={[styles.label, { color: palette.textMuted }]}>{t('common.role')}</Text>
@@ -177,7 +177,7 @@ export default function ProfileScreen() {
 
       <SectionHeader title={t('settings.security')} hint={t('settings.securityHint')} />
       <View style={[styles.card, { backgroundColor: palette.surface, borderColor: palette.border }]}>
-        <ChevronRow label={t('settings.changePassword')} hint={t('settings.changePasswordHint')} onPress={() => Alert.alert(t('settings.changePassword'), 'Coming soon')} />
+        <ChevronRow label={t('settings.changePassword')} hint={t('settings.changePasswordHint')} onPress={() => Alert.alert(t('settings.changePassword'), t('settings.comingSoon'))} />
         <SettingRow label={t('settings.biometric')} hint={t('settings.biometricHint')}>
           <RowToggle value={biometric} onValueChange={setBiometric} />
         </SettingRow>
@@ -194,10 +194,10 @@ export default function ProfileScreen() {
 
       <SectionHeader title={t('settings.about')} hint={t('settings.aboutHint')} />
       <View style={[styles.card, { backgroundColor: palette.surface, borderColor: palette.border }]}>
-        <SettingRow label={t('settings.appVersion')} hint={undefined}>
+        <SettingRow label={t('settings.appVersion')}>
           <Text style={[styles.versionText, { color: palette.textMuted }]}>1.0.0</Text>
         </SettingRow>
-        <ChevronRow label={t('settings.termsPrivacy')} onPress={() => Alert.alert(t('settings.termsPrivacy'), 'Coming soon')} />
+        <ChevronRow label={t('settings.termsPrivacy')} onPress={() => Alert.alert(t('settings.termsPrivacy'), t('settings.comingSoon'))} />
         <ChevronRow label={t('settings.support')} hint={t('settings.supportHint')} onPress={() => Linking.openURL('mailto:support@igohms.gov.in')} />
       </View>
 

@@ -15,7 +15,7 @@ interface ModuleMeta {
 
 export default function ModulesScreen() {
   const { palette } = useTheme();
-  const { t, lang } = useI18n();
+  const { t } = useI18n();
   const [modules, setModules] = useState<ModuleMeta[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -28,7 +28,6 @@ export default function ModulesScreen() {
     empty: { textAlign: 'center', color: palette.textMuted, marginTop: 40 },
     card: { flex: 1, backgroundColor: palette.surface, borderRadius: radii.md, padding: spacing.lg, minHeight: 90 },
     cardTitle: { fontSize: 15, fontWeight: '700', color: palette.primaryDark },
-    cardSub: { fontSize: 11, color: palette.textMuted, marginTop: 2 },
     cardCode: { fontSize: 10, color: palette.textMuted, marginTop: spacing.xs, fontFamily: 'monospace' },
   }), [palette]);
 
@@ -61,8 +60,7 @@ export default function ModulesScreen() {
         renderItem={({ item }) => (
           <Link href={`/module/${item.code}`} asChild>
             <TouchableOpacity style={styles.card}>
-              <Text style={styles.cardTitle}>{lang === 'en' ? item.title : (item.titleMr || item.title)}</Text>
-              <Text style={styles.cardSub}>{item.title}</Text>
+              <Text style={styles.cardTitle}>{t(`mod.${item.code}`, item.title)}</Text>
               <Text style={styles.cardCode}>{item.code}</Text>
             </TouchableOpacity>
           </Link>

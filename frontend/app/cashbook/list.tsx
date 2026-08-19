@@ -153,8 +153,8 @@ export default function CashbookListScreen() {
     }
   }
 
-  const officeName = lang === 'en' || !header ? header?.officeName ?? '' : (header.officeNameMr || header.officeName);
-  const displayTitle = lang === 'en' ? t('cb.title') : t('cb.titleMr');
+  const officeName = lang === 'mr' ? ((header?.officeNameMr || header?.officeName) ?? '') : (header?.officeName ?? '');
+  const displayTitle = t(lang === 'mr' ? 'cb.titleMr' : 'cb.title');
 
   if (loading && page === 1 && rows.length === 0) {
     return <View style={styles.center}><ActivityIndicator size="large" color={palette.primary} /></View>;

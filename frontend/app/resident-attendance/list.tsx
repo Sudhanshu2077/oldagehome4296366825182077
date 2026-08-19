@@ -131,8 +131,8 @@ export default function AttListScreen() {
     }
   }
 
-  const officeName = lang === 'en' || !header ? header?.officeName ?? '' : (header.officeNameMr || header.officeName);
-  const displayTitle = lang === 'en' ? t('att.title') : t('att.titleMr');
+  const officeName = lang === 'mr' ? ((header?.officeNameMr || header?.officeName) ?? '') : (header?.officeName ?? '');
+  const displayTitle = t(lang === 'mr' ? 'att.titleMr' : 'att.title');
 
   if (loading && page === 1 && sessions.length === 0) {
     return <View style={styles.center}><ActivityIndicator size="large" color={palette.primary} /></View>;

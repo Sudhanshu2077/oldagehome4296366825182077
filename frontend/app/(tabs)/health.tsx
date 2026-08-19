@@ -184,7 +184,7 @@ export default function HealthMonitoringScreen() {
     setError(null);
     try {
       await api.post('/health-monitoring/reports/generate', { type: reportType });
-      setReportMessage(`${reportType} health report generated.`);
+      setReportMessage(t('health.reportGenerated').replace('{type}', reportType === 'weekly' ? t('health.weekly') : t('health.monthly')));
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -244,7 +244,7 @@ export default function HealthMonitoringScreen() {
               <View style={styles.cardHeader}>
                 <View>
                   <Text style={styles.cardName}>{item.fullName}</Text>
-                  <Text style={styles.cardMeta}>{item.residentNumber} · {item.gender ?? '—'} · {item.age ?? '—'} yrs</Text>
+                  <Text style={styles.cardMeta}>{item.residentNumber} · {item.gender ?? '—'} · {item.age ?? '—'} {t('health.yrs')}</Text>
                 </View>
                 <TouchableOpacity style={styles.addButton} onPress={() => openAddVitals(item)}>
                   <Text style={styles.addButtonText}>{t('health.addVitals')}</Text>
@@ -252,11 +252,11 @@ export default function HealthMonitoringScreen() {
               </View>
 
               <View style={styles.vitalsRow}>
-                <VitalBadge label="Temp" value={s.temperature ? `${s.temperature} °C` : '—'} />
-                <VitalBadge label="Pulse" value={s.pulse ? `${s.pulse} bpm` : '—'} />
-                <VitalBadge label="BP" value={s.bpSystolic && s.bpDiastolic ? `${s.bpSystolic}/${s.bpDiastolic}` : '—'} />
-                <VitalBadge label="Sugar" value={s.sugar ? `${s.sugar} mg/dL` : '—'} />
-                <VitalBadge label="Weight" value={s.weight ? `${s.weight} kg` : '—'} />
+                <VitalBadge label={t('health.temp')} value={s.temperature ? `${s.temperature} °C` : '—'} />
+                <VitalBadge label={t('health.pulse')} value={s.pulse ? `${s.pulse} bpm` : '—'} />
+                <VitalBadge label={t('health.bp')} value={s.bpSystolic && s.bpDiastolic ? `${s.bpSystolic}/${s.bpDiastolic}` : '—'} />
+                <VitalBadge label={t('health.sugar')} value={s.sugar ? `${s.sugar} mg/dL` : '—'} />
+                <VitalBadge label={t('health.weight')} value={s.weight ? `${s.weight} kg` : '—'} />
               </View>
 
               {s.lastRecordedAt ? <Text style={styles.lastRecorded}>{t('health.lastRecorded')}: {new Date(s.lastRecordedAt).toLocaleDateString()}</Text> : null}
@@ -277,7 +277,7 @@ export default function HealthMonitoringScreen() {
                 onChangeText={(v) => setForm((p) => ({ ...p, recordedAt: v }))}
                 placeholder="YYYY-MM-DD"
               />
-              <Text style={styles.fieldLabel}>Temperature (°C)</Text>
+              <Text style={styles.fieldLabel}>{t('health.temperature')}</Text>
               <TextInput
                 style={styles.input}
                 value={form.temperature}
@@ -285,7 +285,7 @@ export default function HealthMonitoringScreen() {
                 keyboardType="numeric"
                 placeholder="36.6"
               />
-              <Text style={styles.fieldLabel}>Pulse (bpm)</Text>
+              <Text style={styles.fieldLabel}>{t('health.pulseField')}</Text>
               <TextInput
                 style={styles.input}
                 value={form.pulse}
@@ -293,7 +293,7 @@ export default function HealthMonitoringScreen() {
                 keyboardType="numeric"
                 placeholder="72"
               />
-              <Text style={styles.fieldLabel}>BP Systolic</Text>
+              <Text style={styles.fieldLabel}>{t('health.bpSystolic')}</Text>
               <TextInput
                 style={styles.input}
                 value={form.bpSystolic}
@@ -301,7 +301,7 @@ export default function HealthMonitoringScreen() {
                 keyboardType="numeric"
                 placeholder="120"
               />
-              <Text style={styles.fieldLabel}>BP Diastolic</Text>
+              <Text style={styles.fieldLabel}>{t('health.bpDiastolic')}</Text>
               <TextInput
                 style={styles.input}
                 value={form.bpDiastolic}
@@ -309,7 +309,7 @@ export default function HealthMonitoringScreen() {
                 keyboardType="numeric"
                 placeholder="80"
               />
-              <Text style={styles.fieldLabel}>Sugar (mg/dL)</Text>
+              <Text style={styles.fieldLabel}>{t('health.sugarField')}</Text>
               <TextInput
                 style={styles.input}
                 value={form.sugar}
@@ -317,7 +317,7 @@ export default function HealthMonitoringScreen() {
                 keyboardType="numeric"
                 placeholder="100"
               />
-              <Text style={styles.fieldLabel}>Weight (kg)</Text>
+              <Text style={styles.fieldLabel}>{t('health.weightField')}</Text>
               <TextInput
                 style={styles.input}
                 value={form.weight}

@@ -85,7 +85,7 @@ export default function FamilyScreen() {
         relation: form.relation,
         proposedDate: form.proposedDate,
       });
-      setSuccess('Visitor booking submitted');
+      setSuccess(t('family.visitorBooked'));
       setForm((prev) => ({
         ...prev,
         visitorName: '',
@@ -108,7 +108,7 @@ export default function FamilyScreen() {
         residentId: form.residentId,
         requestedDate: form.requestedDate,
       });
-      setSuccess('Video call booking submitted');
+      setSuccess(t('family.videoBooked'));
       setForm((prev) => ({ ...prev, requestedDate: '' }));
     } catch (err) {
       setError(errorMessage(err));

@@ -176,8 +176,8 @@ export default function EmployeeInOutListScreen() {
     }
   }
 
-  const officeName = lang === 'en' || !header ? header?.officeName ?? '' : (header.officeNameMr || header.officeName);
-  const displayTitle = lang === 'en' ? t('inout.title') : t('inout.titleMr');
+  const officeName = lang === 'mr' ? ((header?.officeNameMr || header?.officeName) ?? '') : (header?.officeName ?? '');
+  const displayTitle = t(lang === 'mr' ? 'inout.titleMr' : 'inout.title');
 
   if (loading && rows.length === 0) {
     return <View style={styles.center}><ActivityIndicator size="large" color={palette.primary} /></View>;

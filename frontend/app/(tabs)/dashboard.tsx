@@ -45,7 +45,7 @@ export default function DashboardScreen() {
         {data.kpis.map((kpi) => (
           <View key={kpi.key} style={[styles.kpiCard, { backgroundColor: palette.surface, borderColor: palette.border }]}>
             <Text style={[styles.kpiValue, { color: palette.primary }]}>{kpi.value}</Text>
-            <Text style={[styles.kpiLabel, { color: palette.textMuted }]}>{lang === 'en' ? kpi.label : (kpi.labelMr || kpi.label)}</Text>
+            <Text style={[styles.kpiLabel, { color: palette.textMuted }]}>{lang === 'mr' ? (kpi.labelMr || kpi.label) : kpi.label}</Text>
           </View>
         ))}
       </View>
@@ -66,7 +66,7 @@ export default function DashboardScreen() {
         <Text style={[styles.sectionTitle, { color: palette.text }]}>{t('dashboard.registersThisMonth')}</Text>
         {data.cards.map((c) => (
           <View key={c.key} style={[styles.card, { borderColor: palette.borderSoft }]}>
-            <Text style={[styles.cardTitle, { color: palette.primaryDark }]}>{lang === 'en' ? c.title : (c.titleMr || c.title)}</Text>
+            <Text style={[styles.cardTitle, { color: palette.primaryDark }]}>{lang === 'mr' ? (c.titleMr || c.title) : c.title}</Text>
             <Text style={[styles.cardBody, { color: palette.textMuted }]}>{c.body}</Text>
           </View>
         ))}

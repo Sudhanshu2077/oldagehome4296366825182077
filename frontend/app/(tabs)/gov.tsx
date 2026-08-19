@@ -218,7 +218,7 @@ function InstitutionsTab({ institutions }: { institutions: InstitutionRow[] }) {
       renderItem={({ item }) => (
         <View style={styles.instCard}>
           <Text style={styles.instName}>{item.name}</Text>
-          <Text style={styles.instMeta}>{item.code} · Capacity {item.capacity} · {item.active ? 'Active' : 'Inactive'}</Text>
+          <Text style={styles.instMeta}>{item.code} · {t('gov.capacity')} {item.capacity} · {item.active ? t('gov.active') : t('gov.inactive')}</Text>
         </View>
       )}
     />
@@ -291,8 +291,8 @@ function ApprovalsTab() {
       ListEmptyComponent={<Text style={styles.empty}>{t('common.noData')}</Text>}
       renderItem={({ item }) => (
         <View style={styles.actionCard}>
-          <Text style={styles.actionTitle}>{String(item.type ?? 'Approval')}</Text>
-          <Text style={styles.actionMeta}>Status: {String(item.status ?? 'pending')} · Requested by {String(item.requestedBy ?? '—')}</Text>
+          <Text style={styles.actionTitle}>{String(item.type ?? t('gov.approval'))}</Text>
+          <Text style={styles.actionMeta}>{t('gov.status')}: {String(item.status ?? 'pending')} · {t('gov.requestedBy')} {String(item.requestedBy ?? '—')}</Text>
           <View style={styles.actionRow}>
             <TouchableOpacity style={styles.actionButton} onPress={() => void decide(item.id, 'approve')}>
               <Text style={styles.actionButtonText}>{t('gov.approve')}</Text>
@@ -349,7 +349,7 @@ function InspectionsTab({ institutions }: { institutions: InstitutionRow[] }) {
 
   async function complete(id: string) {
     try {
-      await api.post(`/gov/inspections/${id}/complete`, { findings: 'Completed via app', status: 'completed' });
+      await api.post(`/gov/inspections/${id}/complete`, { findings: t('gov.completedViaApp'), status: 'completed' });
       await load();
     } catch (err) {
       setError(errorMessage(err));
@@ -371,8 +371,8 @@ function InspectionsTab({ institutions }: { institutions: InstitutionRow[] }) {
         ListEmptyComponent={<Text style={styles.empty}>{t('common.noData')}</Text>}
         renderItem={({ item }) => (
           <View style={styles.actionCard}>
-            <Text style={styles.actionTitle}>Inspection on {String(item.scheduledDate ?? '—')}</Text>
-            <Text style={styles.actionMeta}>Institution: {String(item.institutionId ?? '—')} · Status: {String(item.status ?? 'scheduled')}</Text>
+            <Text style={styles.actionTitle}>{t('gov.inspectionOn')} {String(item.scheduledDate ?? '—')}</Text>
+            <Text style={styles.actionMeta}>{t('gov.institution')}: {String(item.institutionId ?? '—')} · {t('gov.status')}: {String(item.status ?? 'scheduled')}</Text>
             {String(item.status ?? '') !== 'completed' ? (
               <TouchableOpacity style={styles.actionButton} onPress={() => void complete(item.id)}>
                 <Text style={styles.actionButtonText}>{t('gov.complete')}</Text>
@@ -382,15 +382,15 @@ function InspectionsTab({ institutions }: { institutions: InstitutionRow[] }) {
         )}
       />
       <EntityModal
-        title="Schedule Inspection"
+        title={t('gov.scheduleInspectionTitle')}
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         onSubmit={() => void schedule()}
       >
         <InstitutionSelect institutions={institutions} value={form.institutionId} onChange={(v) => setForm((p) => ({ ...p, institutionId: v }))} />
         <TextInput style={styles.input} value={form.scheduledDate} onChangeText={(v) => setForm((p) => ({ ...p, scheduledDate: v }))} placeholder="YYYY-MM-DD" />
-        <TextInput style={styles.input} value={form.inspectorName} onChangeText={(v) => setForm((p) => ({ ...p, inspectorName: v }))} placeholder="Inspector name" />
-        <TextInput style={[styles.input, styles.textArea]} value={form.notes} onChangeText={(v) => setForm((p) => ({ ...p, notes: v }))} placeholder="Notes" multiline />
+        <TextInput style={styles.input} value={form.inspectorName} onChangeText={(v) => setForm((p) => ({ ...p, inspectorName: v }))} placeholder={t('gov.inspectorName')} />
+        <TextInput style={[styles.input, styles.textArea]} value={form.notes} onChangeText={(v) => setForm((p) => ({ ...p, notes: v }))} placeholder={t('gov.notes')} multiline />
       </EntityModal>
     </View>
   );
@@ -447,22 +447,22 @@ function ComplianceTab({ institutions }: { institutions: InstitutionRow[] }) {
         ListEmptyComponent={<Text style={styles.empty}>{t('common.noData')}</Text>}
         renderItem={({ item }) => (
           <View style={styles.actionCard}>
-            <Text style={styles.actionTitle}>{String(item.requirement ?? 'Compliance')}</Text>
-            <Text style={styles.actionMeta}>Institution: {String(item.institutionId ?? '—')} · Status: {String(item.status ?? '—')} · Due: {String(item.dueDate ?? '—')}</Text>
+            <Text style={styles.actionTitle}>{String(item.requirement ?? t('gov.compliance'))}</Text>
+            <Text style={styles.actionMeta}>{t('gov.institution')}: {String(item.institutionId ?? '—')} · {t('gov.status')}: {String(item.status ?? '—')} · {t('gov.due')}: {String(item.dueDate ?? '—')}</Text>
           </View>
         )}
       />
       <EntityModal
-        title="Upsert Compliance"
+        title={t('gov.upsertComplianceTitle')}
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         onSubmit={() => void upsert()}
       >
         <InstitutionSelect institutions={institutions} value={form.institutionId} onChange={(v) => setForm((p) => ({ ...p, institutionId: v }))} />
-        <TextInput style={styles.input} value={form.requirement} onChangeText={(v) => setForm((p) => ({ ...p, requirement: v }))} placeholder="Requirement" />
-        <TextInput style={styles.input} value={form.status} onChangeText={(v) => setForm((p) => ({ ...p, status: v }))} placeholder="Status (pending/compliant/non-compliant)" />
-        <TextInput style={styles.input} value={form.dueDate} onChangeText={(v) => setForm((p) => ({ ...p, dueDate: v }))} placeholder="Due date YYYY-MM-DD" />
-        <TextInput style={[styles.input, styles.textArea]} value={form.remarks} onChangeText={(v) => setForm((p) => ({ ...p, remarks: v }))} placeholder="Remarks" multiline />
+        <TextInput style={styles.input} value={form.requirement} onChangeText={(v) => setForm((p) => ({ ...p, requirement: v }))} placeholder={t('gov.requirement')} />
+        <TextInput style={styles.input} value={form.status} onChangeText={(v) => setForm((p) => ({ ...p, status: v }))} placeholder={t('gov.statusPlaceholder')} />
+        <TextInput style={styles.input} value={form.dueDate} onChangeText={(v) => setForm((p) => ({ ...p, dueDate: v }))} placeholder={t('gov.dueDatePlaceholder')} />
+        <TextInput style={[styles.input, styles.textArea]} value={form.remarks} onChangeText={(v) => setForm((p) => ({ ...p, remarks: v }))} placeholder={t('gov.remarks')} multiline />
       </EntityModal>
     </View>
   );
@@ -519,23 +519,23 @@ function GrantsTab({ institutions }: { institutions: InstitutionRow[] }) {
         ListEmptyComponent={<Text style={styles.empty}>{t('common.noData')}</Text>}
         renderItem={({ item }) => (
           <View style={styles.actionCard}>
-            <Text style={styles.actionTitle}>{String(item.title ?? 'Grant')}</Text>
-            <Text style={styles.actionMeta}>Amount: ₹{String(item.amount ?? '—')} · Status: {String(item.status ?? '—')} · Approved: {String(item.approvedDate ?? '—')}</Text>
+            <Text style={styles.actionTitle}>{String(item.title ?? t('gov.grant'))}</Text>
+            <Text style={styles.actionMeta}>{t('gov.amount')}: ₹{String(item.amount ?? '—')} · {t('gov.status')}: {String(item.status ?? '—')} · {t('gov.approved')}: {String(item.approvedDate ?? '—')}</Text>
           </View>
         )}
       />
       <EntityModal
-        title="Create Grant"
+        title={t('gov.createGrantTitle')}
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         onSubmit={() => void create()}
       >
         <InstitutionSelect institutions={institutions} value={form.institutionId} onChange={(v) => setForm((p) => ({ ...p, institutionId: v }))} />
-        <TextInput style={styles.input} value={form.title} onChangeText={(v) => setForm((p) => ({ ...p, title: v }))} placeholder="Grant title" />
-        <TextInput style={styles.input} value={form.amount} onChangeText={(v) => setForm((p) => ({ ...p, amount: v }))} placeholder="Amount" keyboardType="numeric" />
-        <TextInput style={styles.input} value={form.status} onChangeText={(v) => setForm((p) => ({ ...p, status: v }))} placeholder="Status" />
-        <TextInput style={styles.input} value={form.approvedDate} onChangeText={(v) => setForm((p) => ({ ...p, approvedDate: v }))} placeholder="Approved date YYYY-MM-DD" />
-        <TextInput style={[styles.input, styles.textArea]} value={form.remarks} onChangeText={(v) => setForm((p) => ({ ...p, remarks: v }))} placeholder="Remarks" multiline />
+        <TextInput style={styles.input} value={form.title} onChangeText={(v) => setForm((p) => ({ ...p, title: v }))} placeholder={t('gov.grantTitle')} />
+        <TextInput style={styles.input} value={form.amount} onChangeText={(v) => setForm((p) => ({ ...p, amount: v }))} placeholder={t('gov.amount')} keyboardType="numeric" />
+        <TextInput style={styles.input} value={form.status} onChangeText={(v) => setForm((p) => ({ ...p, status: v }))} placeholder={t('gov.status')} />
+        <TextInput style={styles.input} value={form.approvedDate} onChangeText={(v) => setForm((p) => ({ ...p, approvedDate: v }))} placeholder={t('gov.approvedDatePlaceholder')} />
+        <TextInput style={[styles.input, styles.textArea]} value={form.remarks} onChangeText={(v) => setForm((p) => ({ ...p, remarks: v }))} placeholder={t('gov.remarks')} multiline />
       </EntityModal>
     </View>
   );
@@ -592,23 +592,23 @@ function EmergencyTab({ institutions }: { institutions: InstitutionRow[] }) {
         ListEmptyComponent={<Text style={styles.empty}>{t('common.noData')}</Text>}
         renderItem={({ item }) => (
           <View style={[styles.actionCard, { borderLeftWidth: 4, borderLeftColor: palette.error }]}>
-            <Text style={styles.actionTitle}>{String(item.type ?? 'Emergency')}</Text>
-            <Text style={styles.actionMeta}>Severity: {String(item.severity ?? '—')} · Location: {String(item.location ?? '—')}</Text>
+            <Text style={styles.actionTitle}>{String(item.type ?? t('gov.emergencyDefault'))}</Text>
+            <Text style={styles.actionMeta}>{t('gov.severity')}: {String(item.severity ?? '—')} · {t('gov.location')}: {String(item.location ?? '—')}</Text>
             <Text style={styles.actionMeta}>{String(item.description ?? '')}</Text>
           </View>
         )}
       />
       <EntityModal
-        title="Create Emergency"
+        title={t('gov.createEmergencyTitle')}
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         onSubmit={() => void create()}
       >
         <InstitutionSelect institutions={institutions} value={form.institutionId} onChange={(v) => setForm((p) => ({ ...p, institutionId: v }))} />
-        <TextInput style={styles.input} value={form.type} onChangeText={(v) => setForm((p) => ({ ...p, type: v }))} placeholder="Type (medical/fire/security/other)" />
-        <TextInput style={styles.input} value={form.severity} onChangeText={(v) => setForm((p) => ({ ...p, severity: v }))} placeholder="Severity (low/medium/high/critical)" />
-        <TextInput style={styles.input} value={form.location} onChangeText={(v) => setForm((p) => ({ ...p, location: v }))} placeholder="Location" />
-        <TextInput style={[styles.input, styles.textArea]} value={form.description} onChangeText={(v) => setForm((p) => ({ ...p, description: v }))} placeholder="Description" multiline />
+        <TextInput style={styles.input} value={form.type} onChangeText={(v) => setForm((p) => ({ ...p, type: v }))} placeholder={t('gov.typePlaceholder')} />
+        <TextInput style={styles.input} value={form.severity} onChangeText={(v) => setForm((p) => ({ ...p, severity: v }))} placeholder={t('gov.severityPlaceholder')} />
+        <TextInput style={styles.input} value={form.location} onChangeText={(v) => setForm((p) => ({ ...p, location: v }))} placeholder={t('gov.location')} />
+        <TextInput style={[styles.input, styles.textArea]} value={form.description} onChangeText={(v) => setForm((p) => ({ ...p, description: v }))} placeholder={t('gov.description')} multiline />
       </EntityModal>
     </View>
   );

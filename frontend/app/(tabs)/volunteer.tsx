@@ -74,7 +74,7 @@ export default function VolunteerScreen() {
         activityType: form.activityType,
         description: form.description,
       });
-      setSuccess('Activity logged for review');
+      setSuccess(t('volunteer.activityLogged'));
       setForm({ activityDate: '', hours: '', activityType: '', description: '' });
       await load();
     } catch (err) {
@@ -116,8 +116,8 @@ export default function VolunteerScreen() {
           <Text style={styles.cardTitle}>{profile.fullName}</Text>
           <Text style={styles.cardBody}>{t('common.phone')}:{profile.phone}</Text>
           <Text style={styles.cardBody}>{t('common.status')}:{profile.status}</Text>
-          <Text style={styles.cardBody}>Availability: {profile.availability ?? '—'}</Text>
-          <Text style={styles.cardBody}>Skills: {profile.skills?.join(', ') || '—'}</Text>
+          <Text style={styles.cardBody}>{t('volunteer.availability')}: {profile.availability ?? '—'}</Text>
+          <Text style={styles.cardBody}>{t('volunteer.skills')}: {profile.skills?.join(', ') || '—'}</Text>
         </View>
       ) : null}
 
@@ -143,7 +143,7 @@ export default function VolunteerScreen() {
             <View style={styles.card}>
               <Text style={styles.cardTitle}>{item.activityType}</Text>
               <Text style={styles.cardBody}>{t('common.date')}:{item.activityDate}</Text>
-              <Text style={styles.cardBody}>Hours: {item.hours}</Text>
+              <Text style={styles.cardBody}>{t('volunteer.hoursLabel')}: {item.hours}</Text>
               <Text style={styles.cardBody}>{item.description}</Text>
               <Text style={styles.cardBody}>{t('common.status')}:{item.status}</Text>
             </View>

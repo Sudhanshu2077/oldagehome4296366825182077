@@ -13,6 +13,7 @@ import {
 import { Link } from 'expo-router';
 import { api, errorMessage } from '../src/api/client';
 import { colors, spacing, radii } from '../src/config/theme';
+import { useI18n } from '../src/i18n';
 
 interface Institution {
   id: string;
@@ -26,6 +27,7 @@ interface Institution {
 type PortalTab = 'search' | 'inquiry' | 'admission' | 'feedback' | 'volunteer' | 'donate';
 
 export default function PublicPortalScreen() {
+  const { t, lang } = useI18n();
   const [tab, setTab] = useState<PortalTab>('search');
   const [q, setQ] = useState('');
   const [institutions, setInstitutions] = useState<Institution[]>([]);
@@ -53,7 +55,7 @@ export default function PublicPortalScreen() {
     setMessage(null);
     try {
       await api.post(path, body);
-      setMessage('Submitted successfully.');
+      setMessage(t('portal.submitted'));
       reset();
     } catch (err) {
       setError(errorMessage(err));
@@ -62,20 +64,22 @@ export default function PublicPortalScreen() {
     }
   }
 
+  const tabs: PortalTab[] = ['search', 'inquiry', 'admission', 'feedback', 'volunteer', 'donate'];
+
   return (
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.title}>सार्वजनिक पोर्टल / Public Portal</Text>
-        <Text style={styles.subtitle}>Search institutions, request admission, or get involved</Text>
+        <Text style={styles.title}>{t('portal.title')}</Text>
+        <Text style={styles.subtitle}>{t('portal.subtitle')}</Text>
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabBar}>
-          {(['search', 'inquiry', 'admission', 'feedback', 'volunteer', 'donate'] as PortalTab[]).map((t) => (
+          {tabs.map((tb) => (
             <TouchableOpacity
-              key={t}
-              style={[styles.tab, tab === t && styles.tabActive]}
-              onPress={() => { setTab(t); setError(null); setMessage(null); }}
+              key={tb}
+              style={[styles.tab, tab === tb && styles.tabActive]}
+              onPress={() => { setTab(tb); setError(null); setMessage(null); }}
             >
-              <Text style={[styles.tabText, tab === t && styles.tabTextActive]}>{t}</Text>
+              <Text style={[styles.tabText, tab === tb && styles.tabTextActive]}>{t(`portal.tab.${tb}`)}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -85,21 +89,21 @@ export default function PublicPortalScreen() {
 
         {tab === 'search' ? (
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Search Institutions</Text>
+            <Text style={styles.cardTitle}>{t('portal.searchTitle')}</Text>
             <TextInput
               style={styles.input}
-              placeholder="Search by name or code"
+              placeholder={t('portal.searchPlaceholder')}
               value={q}
               onChangeText={setQ}
             />
             <TouchableOpacity style={styles.primaryButton} onPress={() => void search()} disabled={loading}>
-              {loading ? <ActivityIndicator color={colors.textInverse} /> : <Text style={styles.primaryButtonText}>Search</Text>}
+              {loading ? <ActivityIndicator color={colors.textInverse} /> : <Text style={styles.primaryButtonText}>{t('portal.search')}</Text>}
             </TouchableOpacity>
 
             {institutions.map((i) => (
               <View key={i.id} style={styles.resultCard}>
-                <Text style={styles.resultName}>{i.nameMr || i.name}</Text>
-                <Text style={styles.resultMeta}>{i.code} · Capacity {i.capacity}</Text>
+                <Text style={styles.resultName}>{lang === 'mr' ? (i.nameMr || i.name) : i.name}</Text>
+                <Text style={styles.resultMeta}>{i.code} · {t('portal.capacity')} {i.capacity}</Text>
                 <Text style={styles.resultMeta}>{i.addressLine}</Text>
               </View>
             ))}
@@ -126,30 +130,32 @@ export default function PublicPortalScreen() {
           <DonationForm loading={loading} onSubmit={(body, reset) => void submit('/portal/donations/pledge', body, reset)} />
         ) : null}
 
-        <Link href="/login" style={styles.link}>Back to login</Link>
+        <Link href="/login" style={styles.link}>{t('portal.backToLogin')}</Link>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
 function InquiryForm({ loading, onSubmit }: { loading: boolean; onSubmit: (body: Record<string, unknown>, reset: () => void) => void }) {
+  const { t } = useI18n();
   const [form, setForm] = useState({ name: '', email: '', phone: '', subject: '', message: '' });
   return (
     <View style={styles.card}>
-      <Text style={styles.cardTitle}>Submit Inquiry / Complaint</Text>
-      <TextInput style={styles.input} placeholder="Your name" value={form.name} onChangeText={(v) => setForm((p) => ({ ...p, name: v }))} />
-      <TextInput style={styles.input} placeholder="Email" value={form.email} onChangeText={(v) => setForm((p) => ({ ...p, email: v }))} />
-      <TextInput style={styles.input} placeholder="Phone" value={form.phone} onChangeText={(v) => setForm((p) => ({ ...p, phone: v }))} />
-      <TextInput style={styles.input} placeholder="Subject" value={form.subject} onChangeText={(v) => setForm((p) => ({ ...p, subject: v }))} />
-      <TextInput style={[styles.input, styles.textArea]} placeholder="Message" multiline value={form.message} onChangeText={(v) => setForm((p) => ({ ...p, message: v }))} />
-      <TouchableOpacity style={styles.primaryButton} onPress={() => onSubmit({ ...form, subject: form.subject || 'Public inquiry' }, () => setForm({ name: '', email: '', phone: '', subject: '', message: '' }))} disabled={loading}>
-        {loading ? <ActivityIndicator color={colors.textInverse} /> : <Text style={styles.primaryButtonText}>Submit</Text>}
+      <Text style={styles.cardTitle}>{t('portal.inquiryTitle')}</Text>
+      <TextInput style={styles.input} placeholder={t('portal.yourName')} value={form.name} onChangeText={(v) => setForm((p) => ({ ...p, name: v }))} />
+      <TextInput style={styles.input} placeholder={t('portal.email')} value={form.email} onChangeText={(v) => setForm((p) => ({ ...p, email: v }))} />
+      <TextInput style={styles.input} placeholder={t('portal.phone')} value={form.phone} onChangeText={(v) => setForm((p) => ({ ...p, phone: v }))} />
+      <TextInput style={styles.input} placeholder={t('portal.subject')} value={form.subject} onChangeText={(v) => setForm((p) => ({ ...p, subject: v }))} />
+      <TextInput style={[styles.input, styles.textArea]} placeholder={t('portal.message')} multiline value={form.message} onChangeText={(v) => setForm((p) => ({ ...p, message: v }))} />
+      <TouchableOpacity style={styles.primaryButton} onPress={() => onSubmit({ ...form, subject: form.subject || t('portal.publicInquiry') }, () => setForm({ name: '', email: '', phone: '', subject: '', message: '' }))} disabled={loading}>
+        {loading ? <ActivityIndicator color={colors.textInverse} /> : <Text style={styles.primaryButtonText}>{t('portal.submit')}</Text>}
       </TouchableOpacity>
     </View>
   );
 }
 
 function AdmissionForm({ loading, onSubmit }: { loading: boolean; onSubmit: (body: Record<string, unknown>, reset: () => void) => void }) {
+  const { t } = useI18n();
   const [form, setForm] = useState({
     applicantName: '',
     age: '',
@@ -162,15 +168,15 @@ function AdmissionForm({ loading, onSubmit }: { loading: boolean; onSubmit: (bod
   });
   return (
     <View style={styles.card}>
-      <Text style={styles.cardTitle}>Admission Request</Text>
-      <TextInput style={styles.input} placeholder="Applicant name" value={form.applicantName} onChangeText={(v) => setForm((p) => ({ ...p, applicantName: v }))} />
-      <TextInput style={styles.input} placeholder="Age" keyboardType="numeric" value={form.age} onChangeText={(v) => setForm((p) => ({ ...p, age: v }))} />
-      <TextInput style={styles.input} placeholder="Gender" value={form.gender} onChangeText={(v) => setForm((p) => ({ ...p, gender: v }))} />
-      <TextInput style={styles.input} placeholder="Contact name" value={form.contactName} onChangeText={(v) => setForm((p) => ({ ...p, contactName: v }))} />
-      <TextInput style={styles.input} placeholder="Contact phone" value={form.contactPhone} onChangeText={(v) => setForm((p) => ({ ...p, contactPhone: v }))} />
-      <TextInput style={styles.input} placeholder="Contact email" value={form.contactEmail} onChangeText={(v) => setForm((p) => ({ ...p, contactEmail: v }))} />
-      <TextInput style={styles.input} placeholder="Preferred institution code" value={form.preferredInstitutionCode} onChangeText={(v) => setForm((p) => ({ ...p, preferredInstitutionCode: v }))} />
-      <TextInput style={[styles.input, styles.textArea]} placeholder="Medical notes" multiline value={form.medicalNotes} onChangeText={(v) => setForm((p) => ({ ...p, medicalNotes: v }))} />
+      <Text style={styles.cardTitle}>{t('portal.admissionTitle')}</Text>
+      <TextInput style={styles.input} placeholder={t('portal.applicantName')} value={form.applicantName} onChangeText={(v) => setForm((p) => ({ ...p, applicantName: v }))} />
+      <TextInput style={styles.input} placeholder={t('portal.age')} keyboardType="numeric" value={form.age} onChangeText={(v) => setForm((p) => ({ ...p, age: v }))} />
+      <TextInput style={styles.input} placeholder={t('portal.gender')} value={form.gender} onChangeText={(v) => setForm((p) => ({ ...p, gender: v }))} />
+      <TextInput style={styles.input} placeholder={t('portal.contactName')} value={form.contactName} onChangeText={(v) => setForm((p) => ({ ...p, contactName: v }))} />
+      <TextInput style={styles.input} placeholder={t('portal.contactPhone')} value={form.contactPhone} onChangeText={(v) => setForm((p) => ({ ...p, contactPhone: v }))} />
+      <TextInput style={styles.input} placeholder={t('portal.contactEmail')} value={form.contactEmail} onChangeText={(v) => setForm((p) => ({ ...p, contactEmail: v }))} />
+      <TextInput style={styles.input} placeholder={t('portal.preferredCode')} value={form.preferredInstitutionCode} onChangeText={(v) => setForm((p) => ({ ...p, preferredInstitutionCode: v }))} />
+      <TextInput style={[styles.input, styles.textArea]} placeholder={t('portal.medicalNotes')} multiline value={form.medicalNotes} onChangeText={(v) => setForm((p) => ({ ...p, medicalNotes: v }))} />
       <TouchableOpacity
         style={styles.primaryButton}
         onPress={() => onSubmit({
@@ -181,64 +187,67 @@ function AdmissionForm({ loading, onSubmit }: { loading: boolean; onSubmit: (bod
         }))}
         disabled={loading}
       >
-        {loading ? <ActivityIndicator color={colors.textInverse} /> : <Text style={styles.primaryButtonText}>Request Admission</Text>}
+        {loading ? <ActivityIndicator color={colors.textInverse} /> : <Text style={styles.primaryButtonText}>{t('portal.requestAdmission')}</Text>}
       </TouchableOpacity>
     </View>
   );
 }
 
 function FeedbackForm({ loading, onSubmit }: { loading: boolean; onSubmit: (body: Record<string, unknown>, reset: () => void) => void }) {
+  const { t } = useI18n();
   const [form, setForm] = useState({ name: '', email: '', phone: '', category: '', message: '' });
   return (
     <View style={styles.card}>
-      <Text style={styles.cardTitle}>Feedback</Text>
-      <TextInput style={styles.input} placeholder="Your name" value={form.name} onChangeText={(v) => setForm((p) => ({ ...p, name: v }))} />
-      <TextInput style={styles.input} placeholder="Email" value={form.email} onChangeText={(v) => setForm((p) => ({ ...p, email: v }))} />
-      <TextInput style={styles.input} placeholder="Phone" value={form.phone} onChangeText={(v) => setForm((p) => ({ ...p, phone: v }))} />
-      <TextInput style={styles.input} placeholder="Category" value={form.category} onChangeText={(v) => setForm((p) => ({ ...p, category: v }))} />
-      <TextInput style={[styles.input, styles.textArea]} placeholder="Your feedback" multiline value={form.message} onChangeText={(v) => setForm((p) => ({ ...p, message: v }))} />
+      <Text style={styles.cardTitle}>{t('portal.feedbackTitle')}</Text>
+      <TextInput style={styles.input} placeholder={t('portal.yourName')} value={form.name} onChangeText={(v) => setForm((p) => ({ ...p, name: v }))} />
+      <TextInput style={styles.input} placeholder={t('portal.email')} value={form.email} onChangeText={(v) => setForm((p) => ({ ...p, email: v }))} />
+      <TextInput style={styles.input} placeholder={t('portal.phone')} value={form.phone} onChangeText={(v) => setForm((p) => ({ ...p, phone: v }))} />
+      <TextInput style={styles.input} placeholder={t('portal.category')} value={form.category} onChangeText={(v) => setForm((p) => ({ ...p, category: v }))} />
+      <TextInput style={[styles.input, styles.textArea]} placeholder={t('portal.yourFeedback')} multiline value={form.message} onChangeText={(v) => setForm((p) => ({ ...p, message: v }))} />
       <TouchableOpacity style={styles.primaryButton} onPress={() => onSubmit(form, () => setForm({ name: '', email: '', phone: '', category: '', message: '' }))} disabled={loading}>
-        {loading ? <ActivityIndicator color={colors.textInverse} /> : <Text style={styles.primaryButtonText}>Send Feedback</Text>}
+        {loading ? <ActivityIndicator color={colors.textInverse} /> : <Text style={styles.primaryButtonText}>{t('portal.sendFeedback')}</Text>}
       </TouchableOpacity>
     </View>
   );
 }
 
 function VolunteerForm({ loading, onSubmit }: { loading: boolean; onSubmit: (body: Record<string, unknown>, reset: () => void) => void }) {
+  const { t } = useI18n();
   const [form, setForm] = useState({ name: '', email: '', phone: '', skills: '', availability: '', message: '' });
   return (
     <View style={styles.card}>
-      <Text style={styles.cardTitle}>Volunteer Registration</Text>
-      <TextInput style={styles.input} placeholder="Full name" value={form.name} onChangeText={(v) => setForm((p) => ({ ...p, name: v }))} />
-      <TextInput style={styles.input} placeholder="Email" value={form.email} onChangeText={(v) => setForm((p) => ({ ...p, email: v }))} />
-      <TextInput style={styles.input} placeholder="Phone" value={form.phone} onChangeText={(v) => setForm((p) => ({ ...p, phone: v }))} />
-      <TextInput style={styles.input} placeholder="Skills" value={form.skills} onChangeText={(v) => setForm((p) => ({ ...p, skills: v }))} />
-      <TextInput style={styles.input} placeholder="Availability" value={form.availability} onChangeText={(v) => setForm((p) => ({ ...p, availability: v }))} />
-      <TextInput style={[styles.input, styles.textArea]} placeholder="Message" multiline value={form.message} onChangeText={(v) => setForm((p) => ({ ...p, message: v }))} />
+      <Text style={styles.cardTitle}>{t('portal.volunteerTitle')}</Text>
+      <TextInput style={styles.input} placeholder={t('portal.fullName')} value={form.name} onChangeText={(v) => setForm((p) => ({ ...p, name: v }))} />
+      <TextInput style={styles.input} placeholder={t('portal.email')} value={form.email} onChangeText={(v) => setForm((p) => ({ ...p, email: v }))} />
+      <TextInput style={styles.input} placeholder={t('portal.phone')} value={form.phone} onChangeText={(v) => setForm((p) => ({ ...p, phone: v }))} />
+      <TextInput style={styles.input} placeholder={t('portal.skills')} value={form.skills} onChangeText={(v) => setForm((p) => ({ ...p, skills: v }))} />
+      <TextInput style={styles.input} placeholder={t('portal.availability')} value={form.availability} onChangeText={(v) => setForm((p) => ({ ...p, availability: v }))} />
+      <TextInput style={[styles.input, styles.textArea]} placeholder={t('portal.message')} multiline value={form.message} onChangeText={(v) => setForm((p) => ({ ...p, message: v }))} />
       <TouchableOpacity style={styles.primaryButton} onPress={() => onSubmit(form, () => setForm({ name: '', email: '', phone: '', skills: '', availability: '', message: '' }))} disabled={loading}>
-        {loading ? <ActivityIndicator color={colors.textInverse} /> : <Text style={styles.primaryButtonText}>Register</Text>}
+        {loading ? <ActivityIndicator color={colors.textInverse} /> : <Text style={styles.primaryButtonText}>{t('portal.register')}</Text>}
       </TouchableOpacity>
     </View>
   );
 }
 
 function DonationForm({ loading, onSubmit }: { loading: boolean; onSubmit: (body: Record<string, unknown>, reset: () => void) => void }) {
+  const { t } = useI18n();
   const [form, setForm] = useState({ name: '', email: '', phone: '', amount: '', purpose: '', message: '' });
   return (
     <View style={styles.card}>
-      <Text style={styles.cardTitle}>Donation Pledge</Text>
-      <TextInput style={styles.input} placeholder="Name" value={form.name} onChangeText={(v) => setForm((p) => ({ ...p, name: v }))} />
-      <TextInput style={styles.input} placeholder="Email" value={form.email} onChangeText={(v) => setForm((p) => ({ ...p, email: v }))} />
-      <TextInput style={styles.input} placeholder="Phone" value={form.phone} onChangeText={(v) => setForm((p) => ({ ...p, phone: v }))} />
-      <TextInput style={styles.input} placeholder="Amount (₹)" keyboardType="numeric" value={form.amount} onChangeText={(v) => setForm((p) => ({ ...p, amount: v }))} />
-      <TextInput style={styles.input} placeholder="Purpose" value={form.purpose} onChangeText={(v) => setForm((p) => ({ ...p, purpose: v }))} />
-      <TextInput style={[styles.input, styles.textArea]} placeholder="Message" multiline value={form.message} onChangeText={(v) => setForm((p) => ({ ...p, message: v }))} />
+      <Text style={styles.cardTitle}>{t('portal.donationTitle')}</Text>
+      <TextInput style={styles.input} placeholder={t('portal.name')} value={form.name} onChangeText={(v) => setForm((p) => ({ ...p, name: v }))} />
+      <TextInput style={styles.input} placeholder={t('portal.email')} value={form.email} onChangeText={(v) => setForm((p) => ({ ...p, email: v }))} />
+      <TextInput style={styles.input} placeholder={t('portal.phone')} value={form.phone} onChangeText={(v) => setForm((p) => ({ ...p, phone: v }))} />
+      <TextInput style={styles.input} placeholder={t('portal.amount')} keyboardType="numeric" value={form.amount} onChangeText={(v) => setForm((p) => ({ ...p, amount: v }))} />
+      <TextInput style={styles.input} placeholder={t('portal.purpose')} value={form.purpose} onChangeText={(v) => setForm((p) => ({ ...p, purpose: v }))} />
+      <TextInput style={[styles.input, styles.textArea]} placeholder={t('portal.message')} multiline value={form.message} onChangeText={(v) => setForm((p) => ({ ...p, message: v }))} />
       <TouchableOpacity
         style={styles.primaryButton}
         onPress={() => onSubmit({ ...form, amount: form.amount ? Number(form.amount) : undefined }, () => setForm({ name: '', email: '', phone: '', amount: '', purpose: '', message: '' }))}
         disabled={loading}
       >
-        {loading ? <ActivityIndicator color={colors.textInverse} /> : <Text style={styles.primaryButtonText}>Pledge Donation</Text>}
+        {loading ? <ActivityIndicator color={colors.textInverse} /> : <Text style={styles.primaryButtonText}>{t('portal.pledgeDonation')}</Text>}
       </TouchableOpacity>
     </View>
   );

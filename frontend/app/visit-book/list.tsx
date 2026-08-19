@@ -146,8 +146,8 @@ export default function VisitBookListScreen() {
     }
   }
 
-  const displayTitle = lang === 'en' ? t('visitbook.title') : t('visitbook.titleMr');
-  const officeName = lang === 'en' || !header ? header?.officeName ?? '' : (header.officeNameMr || header.officeName);
+  const displayTitle = t(lang === 'mr' ? 'visitbook.titleMr' : 'visitbook.title');
+  const officeName = lang === 'mr' ? ((header?.officeNameMr || header?.officeName) ?? '') : (header?.officeName ?? '');
 
   if (loading && page === 1 && rows.length === 0) {
     return <View style={styles.center}><ActivityIndicator size="large" color={palette.primary} /></View>;

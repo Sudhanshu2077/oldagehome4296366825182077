@@ -30,9 +30,9 @@ export default function AnnouncementsScreen() {
 
   const FORM_FIELDS = [
     { key: 'title', label: t('common.title'), required: true },
-    { key: 'titleMr', label: 'Title (Marathi)', required: false },
+    { key: 'titleMr', label: t('announcements.titleMr'), required: false },
     { key: 'body', label: t('common.message'), required: true },
-    { key: 'bodyMr', label: 'Body (Marathi)', required: false },
+    { key: 'bodyMr', label: t('announcements.bodyMr'), required: false },
   ];
 
   const styles = useMemo(() => StyleSheet.create({
@@ -118,9 +118,9 @@ export default function AnnouncementsScreen() {
         ListEmptyComponent={<Text style={styles.empty}>{t('announcements.empty')}</Text>}
         renderItem={({ item }) => (
           <View style={styles.card}>
-            <Text style={styles.title}>{lang === 'en' ? item.title : (item.titleMr || item.title)}</Text>
-            {item.titleMr && item.title ? <Text style={styles.subtitle}>{item.title}</Text> : null}
-            <Text style={styles.body}>{lang === 'en' ? item.body : (item.bodyMr || item.body)}</Text>
+            <Text style={styles.title}>{lang === 'mr' ? (item.titleMr || item.title) : item.title}</Text>
+            {lang === 'mr' && item.titleMr && item.title ? <Text style={styles.subtitle}>{item.title}</Text> : null}
+            <Text style={styles.body}>{lang === 'mr' ? (item.bodyMr || item.body) : item.body}</Text>
             <Text style={styles.date}>{new Date(item.publishedAt).toLocaleDateString()}</Text>
           </View>
         )}

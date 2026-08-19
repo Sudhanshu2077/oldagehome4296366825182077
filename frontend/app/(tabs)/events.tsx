@@ -210,11 +210,11 @@ export default function EventsScreen() {
 
   async function save() {
     if (!form.title?.trim()) {
-      setError('Title is required');
+      setError(t('events.titleRequired'));
       return;
     }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(selectedDate)) {
-      setError('Date must be in YYYY-MM-DD format');
+      setError(t('events.dateFormat'));
       return;
     }
     setSaving(true);
@@ -277,7 +277,7 @@ export default function EventsScreen() {
                 <Text style={styles.dateDividerText}>{formatHeldDate(ev.eventDate)}</Text>
               </View>
               <View style={styles.chatBubble}>
-                <Text style={styles.chatTitle}>{lang === 'en' ? ev.title : (ev.titleMr || ev.title)}</Text>
+                <Text style={styles.chatTitle}>{lang === 'mr' ? (ev.titleMr || ev.title) : ev.title}</Text>
                 <Text style={styles.chatHeld}>{t('events.heldOn')}: {formatEventDate(ev.eventDate)}</Text>
                 {ev.description ? <Text style={styles.chatBody}>{ev.description}</Text> : null}
                 {ev.photos.length > 0 ? (
@@ -320,7 +320,7 @@ export default function EventsScreen() {
         {upcoming.length === 0 ? <Text style={styles.empty}>{t('events.empty')}</Text> : null}
         {upcoming.map((ev) => (
           <View key={ev.id} style={styles.card}>
-            <Text style={styles.title}>{lang === 'en' ? ev.title : (ev.titleMr || ev.title)}</Text>
+            <Text style={styles.title}>{lang === 'mr' ? (ev.titleMr || ev.title) : ev.title}</Text>
             <Text style={styles.date}>{formatEventDate(ev.eventDate)}</Text>
             {ev.description ? <Text style={styles.body}>{ev.description}</Text> : null}
           </View>
@@ -369,14 +369,14 @@ export default function EventsScreen() {
                   </View>
                 </View>
                 <View style={styles.periodRow}>
-                  {(['AM', 'PM'] as const).map((p) => (
+                  {((['AM', 'PM'] as const).map((p) => ({ p, label: p === 'AM' ? t('events.am') : t('events.pm') }))).map(({ p, label }) => (
                     <TouchableOpacity
                       key={p}
                       style={[styles.periodBtn, time.period === p && styles.periodBtnActive]}
                       onPress={() => setTime((prev) => ({ ...prev, period: p }))}
                       activeOpacity={0.7}
                     >
-                      <Text style={time.period === p ? styles.periodTextActive : styles.periodText}>{p}</Text>
+                      <Text style={time.period === p ? styles.periodTextActive : styles.periodText}>{label}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
