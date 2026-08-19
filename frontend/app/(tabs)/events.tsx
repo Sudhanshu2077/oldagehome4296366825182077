@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, TextInput, Modal, Platform, Image } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 import { api, errorMessage } from '../../src/api/client';
 import { tokenStorage } from '../../src/api/storage';
 import { API_BASE_URL } from '../../src/config/env';
@@ -7,6 +8,7 @@ import { useAuth } from '../../src/auth/AuthContext';
 import { spacing, radii } from '../../src/config/theme';
 import { useTheme } from '../../src/config/ThemeContext';
 import { useI18n } from '../../src/i18n';
+import { CalendarPicker } from '../../src/components/CalendarPicker';
 
 interface EventItem {
   id: string;
@@ -60,6 +62,7 @@ export default function EventsScreen() {
   });
   const [time, setTime] = useState({ hour: 9, minute: 0, period: 'AM' as 'AM' | 'PM' });
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   const canCreate = user?.tier === 'institution' && (user?.role === 'institution-head' || user?.role === 'assistant-manager');
 
@@ -88,6 +91,8 @@ export default function EventsScreen() {
     fieldLabel: { fontSize: 12, color: palette.textMuted, marginBottom: spacing.xs },
     input: { borderWidth: 1, borderColor: palette.border, borderRadius: radii.sm, paddingHorizontal: spacing.sm, paddingVertical: Platform.OS === 'web' ? 8 : 10, fontSize: 14, color: palette.text },
     textArea: { minHeight: 80, textAlignVertical: 'top' },
+    dateButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1, borderColor: palette.border, borderRadius: radii.sm, paddingHorizontal: spacing.md, paddingVertical: Platform.OS === 'web' ? 9 : 12, backgroundColor: palette.surfaceAlt },
+    dateButtonText: { fontSize: 14, color: palette.text },
     modalActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: spacing.md, marginTop: spacing.lg },
     cancelButton: { paddingHorizontal: spacing.lg, paddingVertical: spacing.md },
     cancelText: { color: palette.textMuted, fontWeight: '600' },
@@ -329,13 +334,10 @@ export default function EventsScreen() {
             <ScrollView style={{ maxHeight: 520 }}>
               <View style={{ marginBottom: spacing.md }}>
                 <Text style={styles.fieldLabel}>{t('events.eventDate')} *</Text>
-                <TextInput
-                  style={styles.input}
-                  value={selectedDate}
-                  onChangeText={setSelectedDate}
-                  placeholder="YYYY-MM-DD"
-                  placeholderTextColor={palette.textMuted}
-                />
+                <TouchableOpacity style={styles.dateButton} onPress={() => setPickerOpen(true)} activeOpacity={0.7}>
+                  <Text style={styles.dateButtonText}>{selectedDate}</Text>
+                  <Feather name="calendar" size={16} color={palette.primary} />
+                </TouchableOpacity>
               </View>
 
               <View style={{ marginBottom: spacing.md }}>
@@ -431,6 +433,16 @@ export default function EventsScreen() {
           </View>
         </View>
       </Modal>
+      <CalendarPicker
+        visible={pickerOpen}
+        initialDate={selectedDate}
+        locale={lang}
+        onClose={() => setPickerOpen(false)}
+        onSelect={(date) => {
+          setSelectedDate(date);
+          setPickerOpen(false);
+        }}
+      />
     </View>
   );
 }
