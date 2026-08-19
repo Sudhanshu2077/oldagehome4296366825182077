@@ -67,6 +67,7 @@ export default function AttDailyScreen() {
   const [corrResidentId, setCorrResidentId] = useState('');
   const [corrStatus, setCorrStatus] = useState('PRESENT');
   const [corrReason, setCorrReason] = useState('');
+  const [corrError, setCorrError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
 
@@ -206,6 +207,15 @@ export default function AttDailyScreen() {
   }
 
   async function applyCorrection() {
+    setCorrError(null);
+    if (!corrResidentId) {
+      setCorrError(t('att.correctionSelectResident'));
+      return;
+    }
+    if (!corrReason.trim()) {
+      setCorrError(t('att.correctionReasonRequired'));
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -213,6 +223,7 @@ export default function AttDailyScreen() {
       setCorrectionMode(false);
       setCorrReason('');
       setCorrResidentId('');
+      setCorrError(null);
       await load();
     } catch (err) {
       setError(errorMessage(err));
@@ -296,7 +307,7 @@ export default function AttDailyScreen() {
         ) : null}
 
         {isSubmitted && (canMark || canReview) ? (
-          <TouchableOpacity style={styles.outlineButton} onPress={() => setCorrectionMode(true)}>
+          <TouchableOpacity style={styles.outlineButton} onPress={() => { setCorrError(null); setCorrResidentId(''); setCorrReason(''); setCorrStatus('PRESENT'); setCorrectionMode(true); }}>
             <Text style={styles.outlineText}>{t('att.editAttendance')}</Text>
           </TouchableOpacity>
         ) : null}
@@ -353,23 +364,24 @@ export default function AttDailyScreen() {
             <Text style={styles.modalTitle}>{t('att.correctionMode')}</Text>
             <View style={styles.chipRow}>
               {residents.map((r) => (
-                <TouchableOpacity key={r.id} style={[styles.chip, corrResidentId === r.id && styles.chipActive]} onPress={() => { setCorrResidentId(r.id); setCorrStatus('PRESENT'); }}>
+                <TouchableOpacity key={r.id} style={[styles.chip, corrResidentId === r.id && styles.chipActive]} onPress={() => { setCorrResidentId(r.id); setCorrStatus('PRESENT'); setCorrError(null); }}>
                   <Text style={[styles.chipText, corrResidentId === r.id && styles.chipTextActive]}>{r.fullName}</Text>
                 </TouchableOpacity>
               ))}
             </View>
             <View style={styles.chipRow}>
               {statuses.map((st) => (
-                <TouchableOpacity key={st} style={[styles.chip, corrStatus === st && styles.chipActive]} onPress={() => setCorrStatus(st)}>
+                <TouchableOpacity key={st} style={[styles.chip, corrStatus === st && styles.chipActive]} onPress={() => { setCorrStatus(st); setCorrError(null); }}>
                   <Text style={[styles.chipText, corrStatus === st && styles.chipTextActive]}>{t(`att.status${st}`)}</Text>
                 </TouchableOpacity>
               ))}
             </View>
             <Text style={styles.label}>{t('att.correctionReason')}</Text>
-            <TextInput style={styles.reasonInput} value={corrReason} onChangeText={setCorrReason} placeholder={t('att.correctionReason')} placeholderTextColor={palette.textMuted} />
+            <TextInput style={styles.reasonInput} value={corrReason} onChangeText={(v) => { setCorrReason(v); setCorrError(null); }} placeholder={t('att.correctionReason')} placeholderTextColor={palette.textMuted} />
+            {corrError ? <Text style={styles.error}>{corrError}</Text> : null}
             <View style={styles.modalActions}>
               <TouchableOpacity style={styles.cancelButton} onPress={() => setCorrectionMode(false)}><Text style={styles.cancelText}>{t('common.cancel')}</Text></TouchableOpacity>
-              <TouchableOpacity style={styles.saveButton} onPress={() => void applyCorrection()} disabled={busy || !corrResidentId || !corrReason}>
+              <TouchableOpacity style={styles.saveButton} onPress={() => void applyCorrection()} disabled={busy}>
                 {busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveText}>{t('common.save')}</Text>}
               </TouchableOpacity>
             </View>
