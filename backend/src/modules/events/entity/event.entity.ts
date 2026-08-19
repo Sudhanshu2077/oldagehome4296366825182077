@@ -8,6 +8,7 @@ const EventSchema = new Schema(
     description: { type: String, default: '' },
     descriptionMr: { type: String, default: '' },
     photoUrl: { type: String, default: '' },
+    photos: { type: [String], default: [] },
     eventDate: { type: Date, required: true, index: true },
     isPublic: { type: Boolean, default: true },
     createdBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },

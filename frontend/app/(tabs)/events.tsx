@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, TextInput, Modal, ScrollView, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, TextInput, Modal, Platform, Image } from 'react-native';
 import { api, errorMessage } from '../../src/api/client';
+import { tokenStorage } from '../../src/api/storage';
+import { API_BASE_URL } from '../../src/config/env';
 import { useAuth } from '../../src/auth/AuthContext';
 import { spacing, radii } from '../../src/config/theme';
 import { useTheme } from '../../src/config/ThemeContext';
@@ -13,30 +15,30 @@ interface EventItem {
   description: string;
   eventDate: string;
   photoUrl: string;
+  photos: string[];
 }
 
-const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const HOURS = Array.from({ length: 12 }, (_, i) => i + 1);
-const MINUTES = Array.from({ length: 12 }, (_, i) => i * 5);
+const HOURS_MIN = 1;
+const HOURS_MAX = 12;
+const MINUTE_STEP = 5;
 
 function pad(n: number): string {
   return String(n).padStart(2, '0');
 }
 
-function dayKey(d: Date): string {
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-}
-
-function istToday(): Date {
+function istNow(): Date {
   const fmt = new Intl.DateTimeFormat('en-US', {
     timeZone: 'Asia/Kolkata',
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
   });
   const parts = fmt.formatToParts(new Date());
   const get = (type: string): number => Number(parts.find((p) => p.type === type)?.value ?? 0);
-  return new Date(get('year'), get('month') - 1, get('day'));
+  return new Date(get('year'), get('month') - 1, get('day'), get('hour') % 24, get('minute') % 60);
 }
 
 const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
@@ -45,47 +47,43 @@ export default function EventsScreen() {
   const { palette } = useTheme();
   const { t, lang } = useI18n();
   const { user } = useAuth();
+  const [view, setView] = useState<'options' | 'past'>('options');
   const [items, setItems] = useState<EventItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [form, setForm] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
-
-  const today = useMemo(() => istToday(), []);
-  const [viewMonth, setViewMonth] = useState(today.getMonth());
-  const [viewYear, setViewYear] = useState(today.getFullYear());
-  const [selectedDate, setSelectedDate] = useState<Date>(today);
+  const [selectedDate, setSelectedDate] = useState<string>(() => {
+    const d = istNow();
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  });
   const [time, setTime] = useState({ hour: 9, minute: 0, period: 'AM' as 'AM' | 'PM' });
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
 
   const canCreate = user?.tier === 'institution' && (user?.role === 'institution-head' || user?.role === 'assistant-manager');
-
-  const eventDateOnly = useMemo(() => {
-    const map = new Map<string, EventItem[]>();
-    for (const ev of items) {
-      const k = dayKey(new Date(ev.eventDate));
-      const list = map.get(k) ?? [];
-      list.push(ev);
-      map.set(k, list);
-    }
-    return map;
-  }, [items]);
 
   const styles = useMemo(() => StyleSheet.create({
     container: { flex: 1, backgroundColor: palette.background },
     center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
     headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: spacing.md },
     screenTitle: { fontSize: 17, fontWeight: '700', color: palette.primaryDark },
-    addButton: { backgroundColor: palette.primary, borderRadius: radii.sm, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
-    addButtonText: { color: palette.textInverse, fontWeight: '600', fontSize: 13 },
     error: { color: palette.error, padding: spacing.md },
+    scroll: { padding: spacing.md, paddingBottom: spacing.xl },
+    optionCard: { backgroundColor: palette.surface, borderRadius: radii.lg, borderWidth: 1, borderColor: palette.border, padding: spacing.xl, marginBottom: spacing.lg, alignItems: 'center' },
+    optionTitle: { fontSize: 16, fontWeight: '700', color: palette.primaryDark, marginTop: spacing.sm, textAlign: 'center' },
+    optionSub: { fontSize: 12, color: palette.textMuted, marginTop: 4, textAlign: 'center' },
+    optionIcon: { width: 48, height: 48, borderRadius: 24, backgroundColor: palette.backgroundSoft, alignItems: 'center', justifyContent: 'center' },
+    optionIconText: { fontSize: 22, fontWeight: '700', color: palette.primary },
+    sectionLabel: { fontSize: 12, fontWeight: '700', color: palette.primaryDark, marginBottom: spacing.sm, marginTop: spacing.sm },
     empty: { textAlign: 'center', color: palette.textMuted, marginTop: 40 },
-    card: { backgroundColor: palette.surface, borderRadius: radii.md, padding: spacing.lg, marginBottom: spacing.md },
+    card: { backgroundColor: palette.surface, borderRadius: radii.md, padding: spacing.lg, marginBottom: spacing.md, borderWidth: 1, borderColor: palette.border },
     title: { fontSize: 15, fontWeight: '700', color: palette.primaryDark },
     date: { fontSize: 11, color: palette.textMuted, marginTop: spacing.xs },
     body: { fontSize: 13, color: palette.text, marginTop: spacing.md },
+
     modalBackdrop: { flex: 1, backgroundColor: palette.overlay, alignItems: 'center', justifyContent: 'center', padding: spacing.lg },
-    modalCard: { backgroundColor: palette.surface, borderRadius: radii.lg, padding: spacing.xl, width: '100%', maxWidth: 480 },
+    modalCard: { backgroundColor: palette.surface, borderRadius: radii.lg, padding: spacing.xl, width: '100%', maxWidth: 520 },
     modalTitle: { fontSize: 16, fontWeight: '700', color: palette.primaryDark, marginBottom: spacing.md },
     fieldLabel: { fontSize: 12, color: palette.textMuted, marginBottom: spacing.xs },
     input: { borderWidth: 1, borderColor: palette.border, borderRadius: radii.sm, paddingHorizontal: spacing.sm, paddingVertical: Platform.OS === 'web' ? 8 : 10, fontSize: 14, color: palette.text },
@@ -96,36 +94,36 @@ export default function EventsScreen() {
     saveButton: { backgroundColor: palette.primary, borderRadius: radii.sm, paddingHorizontal: spacing.xl, paddingVertical: spacing.md },
     saveText: { color: palette.textInverse, fontWeight: '600' },
 
-    calendarCard: { backgroundColor: palette.surface, borderRadius: radii.md, padding: spacing.md, marginBottom: spacing.md },
-    calNavRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.sm },
-    calNavBtn: { paddingHorizontal: spacing.lg, paddingVertical: spacing.xs, borderRadius: radii.sm, backgroundColor: palette.surfaceAlt },
-    calNavBtnText: { fontSize: 16, fontWeight: '700', color: palette.primaryDark },
-    calMonthLabel: { fontSize: 14, fontWeight: '700', color: palette.text },
-    todayBtn: { alignSelf: 'center', marginTop: spacing.xs, paddingHorizontal: spacing.lg, paddingVertical: spacing.xs, borderRadius: radii.pill, backgroundColor: palette.secondary, borderWidth: 1, borderColor: palette.primaryLight },
-    todayBtnText: { fontSize: 12, fontWeight: '600', color: palette.primary },
-    weekdayRow: { flexDirection: 'row' },
-    weekdayCell: { flex: 1, alignItems: 'center', paddingVertical: spacing.xs },
-    weekdayLabel: { fontSize: 10, fontWeight: '600', color: palette.textMuted },
-    dayRow: { flexDirection: 'row' },
-    dayCell: { flex: 1, alignItems: 'center', justifyContent: 'center', height: 40, marginVertical: 1 },
-    dayCellBlank: { flex: 1 },
-    dayInner: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
-    dayNumber: { fontSize: 13, color: palette.text },
-    dayNumberMuted: { fontSize: 13, color: palette.textMuted },
-    dayNumberToday: { fontSize: 13, fontWeight: '700', color: palette.textInverse },
-    daySelected: { backgroundColor: palette.primary },
-    dayToday: { backgroundColor: palette.secondary, borderWidth: 1, borderColor: palette.primaryLight },
-    eventDot: { width: 5, height: 5, borderRadius: 2.5, backgroundColor: palette.primary, marginTop: 2 },
+    stepperRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm },
+    stepperColumn: { flex: 1, alignItems: 'center' },
+    stepperLabel: { fontSize: 12, color: palette.textMuted, marginBottom: spacing.xs },
+    stepperControl: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: palette.border, borderRadius: radii.md, backgroundColor: palette.surfaceAlt },
+    stepperBtn: { paddingHorizontal: spacing.lg, paddingVertical: spacing.sm },
+    stepperBtnText: { fontSize: 18, fontWeight: '700', color: palette.primary },
+    stepperValue: { minWidth: 52, textAlign: 'center', fontSize: 18, fontWeight: '700', color: palette.text },
+    periodRow: { flexDirection: 'row', gap: spacing.sm },
+    periodBtn: { flex: 1, borderWidth: 1, borderColor: palette.border, borderRadius: radii.md, paddingVertical: spacing.sm, alignItems: 'center' },
+    periodBtnActive: { backgroundColor: palette.primary, borderColor: palette.primary },
+    periodText: { fontSize: 13, color: palette.text },
+    periodTextActive: { color: palette.textInverse, fontWeight: '700' },
 
-    selectedDayTitle: { fontSize: 13, fontWeight: '700', color: palette.text, marginBottom: spacing.sm, marginTop: spacing.sm },
+    attachRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.sm },
+    attachBtn: { flex: 1, borderWidth: 1, borderColor: palette.primary, borderRadius: radii.md, paddingVertical: spacing.md, alignItems: 'center', backgroundColor: palette.backgroundSoft },
+    attachText: { color: palette.primary, fontWeight: '600', fontSize: 13 },
+    imagePreview: { width: 64, height: 64, borderRadius: radii.sm, marginTop: spacing.sm, marginRight: spacing.sm },
 
-    timeSection: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: spacing.md },
-    timeColumn: { flex: 1 },
-    timePickerRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-    chip: { borderWidth: 1, borderColor: palette.border, borderRadius: radii.sm, paddingHorizontal: 12, paddingVertical: 6, minWidth: 44, alignItems: 'center' },
-    chipActive: { backgroundColor: palette.secondary, borderColor: palette.primaryLight },
-    chipText: { fontSize: 13, color: palette.text },
-    chipTextActive: { fontSize: 13, fontWeight: '700', color: palette.primary },
+    chatContainer: { flex: 1 },
+    chatScroll: { padding: spacing.md },
+    dateDivider: { alignSelf: 'center', backgroundColor: palette.surfaceAlt, borderRadius: radii.pill, paddingHorizontal: spacing.md, paddingVertical: 4, marginVertical: spacing.sm },
+    dateDividerText: { fontSize: 11, color: palette.textMuted },
+    chatBubble: { backgroundColor: palette.surface, borderRadius: radii.lg, borderWidth: 1, borderColor: palette.border, padding: spacing.lg, marginBottom: spacing.md, maxWidth: '100%' },
+    chatTitle: { fontSize: 15, fontWeight: '700', color: palette.primaryDark },
+    chatHeld: { fontSize: 11, color: palette.textMuted, marginTop: 2 },
+    chatBody: { fontSize: 13, color: palette.text, marginTop: spacing.md },
+    chatImages: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginTop: spacing.md },
+    chatImage: { width: 72, height: 72, borderRadius: radii.sm },
+    backBtn: { alignSelf: 'flex-start', borderWidth: 1, borderColor: palette.border, borderRadius: radii.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, marginBottom: spacing.md },
+    backText: { color: palette.primary, fontWeight: '600', fontSize: 13 },
   }), [palette]);
 
   const load = useCallback(async () => {
@@ -144,64 +142,74 @@ export default function EventsScreen() {
     void load();
   }, [load]);
 
-  const selectedDayEvents = useMemo(() => {
-    const k = dayKey(selectedDate);
-    return eventDateOnly.get(k) ?? [];
-  }, [selectedDate, eventDateOnly]);
+  const upcoming = useMemo(() => {
+    const now = Date.now() - IST_OFFSET_MS;
+    return items.filter((ev) => new Date(ev.eventDate).getTime() > now).sort((a, b) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime());
+  }, [items]);
 
-  function openCreate(date: Date) {
-    setSelectedDate(date);
+  const past = useMemo(() => {
+    const now = Date.now() - IST_OFFSET_MS;
+    return items.filter((ev) => new Date(ev.eventDate).getTime() <= now).sort((a, b) => new Date(b.eventDate).getTime() - new Date(a.eventDate).getTime());
+  }, [items]);
+
+  function openCreate() {
     setForm({ title: '', titleMr: '', description: '' });
     setTime({ hour: 9, minute: 0, period: 'AM' });
+    setPendingFiles([]);
+    const d = istNow();
+    setSelectedDate(`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`);
     setModalOpen(true);
   }
 
-  function prevMonth() {
-    if (viewMonth === 0) {
-      setViewMonth(11);
-      setViewYear(viewYear - 1);
-    } else {
-      setViewMonth(viewMonth - 1);
+  function stepHour(dir: 1 | -1) {
+    setTime((prev) => {
+      let h = prev.hour + dir;
+      if (h < HOURS_MIN) h = HOURS_MAX;
+      if (h > HOURS_MAX) h = HOURS_MIN;
+      return { ...prev, hour: h };
+    });
+  }
+
+  function stepMinute(dir: 1 | -1) {
+    setTime((prev) => {
+      let m = prev.minute + dir * MINUTE_STEP;
+      if (m < 0) m = 60 - MINUTE_STEP;
+      if (m >= 60) m = 0;
+      return { ...prev, minute: m };
+    });
+  }
+
+  function pickImages() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/png,image/jpeg';
+    input.multiple = true;
+    input.onchange = () => {
+      const files = input.files ? Array.from(input.files) : [];
+      setPendingFiles((prev) => [...prev, ...files]);
+    };
+    input.click();
+  }
+
+  async function uploadImages(eventId: string) {
+    const token = await tokenStorage.getItem('accessToken');
+    for (const file of pendingFiles) {
+      const fd = new FormData();
+      fd.append('file', file);
+      const headers: Record<string, string> = {};
+      if (token) headers.Authorization = `Bearer ${token}`;
+      const res = await fetch(`${API_BASE_URL}/events/${eventId}/images`, { method: 'POST', headers, body: fd });
+      if (!res.ok) throw new Error('image upload failed');
     }
-  }
-
-  function nextMonth() {
-    if (viewMonth === 11) {
-      setViewMonth(0);
-      setViewYear(viewYear + 1);
-    } else {
-      setViewMonth(viewMonth + 1);
-    }
-  }
-
-  function prevYear() {
-    setViewYear(viewYear - 1);
-  }
-
-  function nextYear() {
-    setViewYear(viewYear + 1);
-  }
-
-  function goToday() {
-    setViewMonth(today.getMonth());
-    setViewYear(today.getFullYear());
-    setSelectedDate(today);
-  }
-
-  function buildDays(): (number | null)[] {
-    const first = new Date(viewYear, viewMonth, 1);
-    const startOffset = first.getDay();
-    const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
-    const cells: (number | null)[] = [];
-    for (let i = 0; i < startOffset; i++) cells.push(null);
-    for (let d = 1; d <= daysInMonth; d++) cells.push(d);
-    while (cells.length % 7 !== 0) cells.push(null);
-    return cells;
   }
 
   async function save() {
     if (!form.title?.trim()) {
       setError('Title is required');
+      return;
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(selectedDate)) {
+      setError('Date must be in YYYY-MM-DD format');
       return;
     }
     setSaving(true);
@@ -210,9 +218,18 @@ export default function EventsScreen() {
       const hour24 = time.period === 'PM'
         ? (time.hour === 12 ? 12 : time.hour + 12)
         : (time.hour === 12 ? 0 : time.hour);
-      const eventDate = new Date(Date.UTC(viewYear, viewMonth, selectedDate.getDate(), hour24, time.minute) - IST_OFFSET_MS).toISOString();
-      await api.post('/events', { ...form, eventDate });
+      const parts = selectedDate.split('-').map(Number);
+      if (parts.length !== 3 || parts.some((n) => Number.isNaN(n))) throw new Error('invalid date');
+      const y = parts[0] as number;
+      const m = parts[1] as number;
+      const d = parts[2] as number;
+      const eventDate = new Date(Date.UTC(y, m - 1, d, hour24, time.minute) - IST_OFFSET_MS).toISOString();
+      const created = (await api.post('/events', { ...form, eventDate })).data as { data: { id: string } };
+      if (pendingFiles.length > 0) {
+        await uploadImages(created.data.id);
+      }
       setModalOpen(false);
+      setPendingFiles([]);
       await load();
     } catch (err) {
       setError(errorMessage(err));
@@ -221,13 +238,57 @@ export default function EventsScreen() {
     }
   }
 
-  const days = buildDays();
-  const weekRows: (number | null)[][] = [];
-  for (let i = 0; i < days.length; i += 7) weekRows.push(days.slice(i, i + 7));
+  function formatEventDate(iso: string): string {
+    const d = new Date(new Date(iso).getTime() + IST_OFFSET_MS);
+    return d.toLocaleString(lang === 'hi' ? 'hi-IN' : lang === 'mr' ? 'mr-IN' : 'en-IN', {
+      weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
+    });
+  }
 
-  const monthName = new Date(viewYear, viewMonth, 1).toLocaleString(lang === 'hi' ? 'hi-IN' : lang === 'mr' ? 'mr-IN' : 'en-IN', { month: 'long', year: 'numeric' });
+  function formatHeldDate(iso: string): string {
+    const d = new Date(new Date(iso).getTime() + IST_OFFSET_MS);
+    return d.toLocaleDateString(lang === 'hi' ? 'hi-IN' : lang === 'mr' ? 'mr-IN' : 'en-IN', {
+      day: 'numeric', month: 'long', year: 'numeric',
+    });
+  }
 
   if (loading) return <View style={styles.center}><ActivityIndicator size="large" color={palette.primary} /></View>;
+
+  if (view === 'past') {
+    return (
+      <View style={styles.container}>
+        <View style={styles.headerRow}>
+          <Text style={styles.screenTitle}>{t('events.pastEvents')}</Text>
+        </View>
+        {error ? <Text style={styles.error}>{error}</Text> : null}
+        <ScrollView style={styles.chatContainer} contentContainerStyle={styles.chatScroll}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => setView('options')}>
+            <Text style={styles.backText}>{t('events.backToOptions')} ‹</Text>
+          </TouchableOpacity>
+          {past.length === 0 ? <Text style={styles.empty}>{t('events.noPastEvents')}</Text> : null}
+          {past.map((ev) => (
+            <View key={ev.id}>
+              <View style={styles.dateDivider}>
+                <Text style={styles.dateDividerText}>{formatHeldDate(ev.eventDate)}</Text>
+              </View>
+              <View style={styles.chatBubble}>
+                <Text style={styles.chatTitle}>{lang === 'en' ? ev.title : (ev.titleMr || ev.title)}</Text>
+                <Text style={styles.chatHeld}>{t('events.heldOn')}: {formatEventDate(ev.eventDate)}</Text>
+                {ev.description ? <Text style={styles.chatBody}>{ev.description}</Text> : null}
+                {ev.photos.length > 0 ? (
+                  <View style={styles.chatImages}>
+                    {ev.photos.map((p, i) => (
+                      <EventImage key={i} url={p} />
+                    ))}
+                  </View>
+                ) : null}
+              </View>
+            </View>
+          ))}
+        </ScrollView>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -237,134 +298,83 @@ export default function EventsScreen() {
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
-      <FlatList
-        contentContainerStyle={{ padding: spacing.md }}
-        data={selectedDayEvents}
-        keyExtractor={(i) => i.id}
-        ListHeaderComponent={
-          <View>
-            <View style={styles.calendarCard}>
-              <View style={styles.calNavRow}>
-                <TouchableOpacity style={styles.calNavBtn} onPress={prevYear} activeOpacity={0.7}>
-                  <Text style={styles.calNavBtnText}>«</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.calNavBtn} onPress={prevMonth} activeOpacity={0.7}>
-                  <Text style={styles.calNavBtnText}>‹</Text>
-                </TouchableOpacity>
-                <Text style={styles.calMonthLabel}>{monthName}</Text>
-                <TouchableOpacity style={styles.calNavBtn} onPress={nextMonth} activeOpacity={0.7}>
-                  <Text style={styles.calNavBtnText}>›</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.calNavBtn} onPress={nextYear} activeOpacity={0.7}>
-                  <Text style={styles.calNavBtnText}>»</Text>
-                </TouchableOpacity>
-              </View>
-              <TouchableOpacity style={styles.todayBtn} onPress={goToday} activeOpacity={0.7}>
-                <Text style={styles.todayBtnText}>{t('events.today')}</Text>
-              </TouchableOpacity>
+      <ScrollView style={styles.scroll}>
+        <TouchableOpacity style={styles.optionCard} onPress={openCreate} activeOpacity={0.8}>
+          <View style={styles.optionIcon}><Text style={styles.optionIconText}>+</Text></View>
+          <Text style={styles.optionTitle}>{t('events.addUpcoming')}</Text>
+          <Text style={styles.optionSub}>{t('events.eventTime')} · {t('events.attachImages')}</Text>
+        </TouchableOpacity>
 
-              <View style={styles.weekdayRow}>
-                {WEEKDAYS.map((w) => (
-                  <View key={w} style={styles.weekdayCell}>
-                    <Text style={styles.weekdayLabel}>{w}</Text>
-                  </View>
-                ))}
-              </View>
+        <TouchableOpacity style={styles.optionCard} onPress={() => setView('past')} activeOpacity={0.8}>
+          <View style={styles.optionIcon}><Text style={styles.optionIconText}>≡</Text></View>
+          <Text style={styles.optionTitle}>{t('events.checkPast')}</Text>
+          <Text style={styles.optionSub}>{t('events.heldOn')} · {t('events.pastEvents')}</Text>
+        </TouchableOpacity>
 
-              {weekRows.map((row, ri) => (
-                <View key={ri} style={styles.dayRow}>
-                  {row.map((day, ci) => {
-                    if (day === null) return <View key={ci} style={styles.dayCellBlank} />;
-                    const d = new Date(viewYear, viewMonth, day);
-                    const isToday = dayKey(d) === dayKey(today);
-                    const isSelected = dayKey(d) === dayKey(selectedDate);
-                    const hasEvents = eventDateOnly.has(dayKey(d));
-                    return (
-                      <TouchableOpacity
-                        key={ci}
-                        style={styles.dayCell}
-                        activeOpacity={0.7}
-                        onPress={() => {
-                          setSelectedDate(d);
-                          if (canCreate) openCreate(d);
-                        }}
-                      >
-                        <View style={[styles.dayInner, isSelected ? styles.daySelected : isToday ? styles.dayToday : null]}>
-                          <Text style={isSelected ? styles.dayNumberToday : isToday ? styles.dayNumberToday : styles.dayNumber}>{day}</Text>
-                        </View>
-                        <View style={[styles.eventDot, !hasEvents && { opacity: 0 }]} />
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-              ))}
-            </View>
-
-            <Text style={styles.selectedDayTitle}>
-              {selectedDate.toLocaleDateString(lang === 'hi' ? 'hi-IN' : lang === 'mr' ? 'mr-IN' : 'en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-            </Text>
+        <Text style={styles.sectionLabel}>{t('events.upcomingEvents')}</Text>
+        {upcoming.length === 0 ? <Text style={styles.empty}>{t('events.empty')}</Text> : null}
+        {upcoming.map((ev) => (
+          <View key={ev.id} style={styles.card}>
+            <Text style={styles.title}>{lang === 'en' ? ev.title : (ev.titleMr || ev.title)}</Text>
+            <Text style={styles.date}>{formatEventDate(ev.eventDate)}</Text>
+            {ev.description ? <Text style={styles.body}>{ev.description}</Text> : null}
           </View>
-        }
-        ListEmptyComponent={<Text style={styles.empty}>{t('events.empty')}</Text>}
-        renderItem={({ item }) => (
-          <View style={styles.card}>
-            <Text style={styles.title}>{lang === 'en' ? item.title : (item.titleMr || item.title)}</Text>
-            <Text style={styles.date}>{new Date(item.eventDate).toLocaleString()}</Text>
-            {item.description ? <Text style={styles.body}>{item.description}</Text> : null}
-          </View>
-        )}
-      />
+        ))}
+      </ScrollView>
 
       <Modal visible={modalOpen} animationType="slide" transparent>
         <View style={styles.modalBackdrop}>
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>
-              {t('events.addFor')} {selectedDate.toLocaleDateString(lang === 'hi' ? 'hi-IN' : lang === 'mr' ? 'mr-IN' : 'en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
-            </Text>
-            <ScrollView style={{ maxHeight: 480 }}>
+            <Text style={styles.modalTitle}>{t('events.addUpcoming')}</Text>
+            <ScrollView style={{ maxHeight: 520 }}>
+              <View style={{ marginBottom: spacing.md }}>
+                <Text style={styles.fieldLabel}>{t('events.eventDate')} *</Text>
+                <TextInput
+                  style={styles.input}
+                  value={selectedDate}
+                  onChangeText={setSelectedDate}
+                  placeholder="YYYY-MM-DD"
+                  placeholderTextColor={palette.textMuted}
+                />
+              </View>
+
               <View style={{ marginBottom: spacing.md }}>
                 <Text style={styles.fieldLabel}>{t('events.eventTime')} *</Text>
-                <View style={styles.timeSection}>
-                  <View style={styles.timeColumn}>
-                    <Text style={styles.fieldLabel}>{t('events.hour')}</Text>
-                    <View style={styles.timePickerRow}>
-                      {HOURS.map((h) => (
-                        <TouchableOpacity
-                          key={h}
-                          style={[styles.chip, time.hour === h && styles.chipActive]}
-                          onPress={() => setTime((prev) => ({ ...prev, hour: h }))}
-                          activeOpacity={0.7}
-                        >
-                          <Text style={time.hour === h ? styles.chipTextActive : styles.chipText}>{h}</Text>
-                        </TouchableOpacity>
-                      ))}
+                <View style={styles.stepperRow}>
+                  <View style={styles.stepperColumn}>
+                    <Text style={styles.stepperLabel}>{t('events.hour')}</Text>
+                    <View style={styles.stepperControl}>
+                      <TouchableOpacity style={styles.stepperBtn} onPress={() => stepHour(-1)} activeOpacity={0.7}>
+                        <Text style={styles.stepperBtnText}>‹</Text>
+                      </TouchableOpacity>
+                      <Text style={styles.stepperValue}>{pad(time.hour)}</Text>
+                      <TouchableOpacity style={styles.stepperBtn} onPress={() => stepHour(1)} activeOpacity={0.7}>
+                        <Text style={styles.stepperBtnText}>›</Text>
+                      </TouchableOpacity>
                     </View>
                   </View>
-                  <View style={[styles.timeColumn, { marginLeft: spacing.sm }]}>
-                    <Text style={styles.fieldLabel}>{t('events.minute')}</Text>
-                    <View style={styles.timePickerRow}>
-                      {MINUTES.map((m) => (
-                        <TouchableOpacity
-                          key={m}
-                          style={[styles.chip, time.minute === m && styles.chipActive]}
-                          onPress={() => setTime((prev) => ({ ...prev, minute: m }))}
-                          activeOpacity={0.7}
-                        >
-                          <Text style={time.minute === m ? styles.chipTextActive : styles.chipText}>{pad(m)}</Text>
-                        </TouchableOpacity>
-                      ))}
+                  <View style={styles.stepperColumn}>
+                    <Text style={styles.stepperLabel}>{t('events.minute')}</Text>
+                    <View style={styles.stepperControl}>
+                      <TouchableOpacity style={styles.stepperBtn} onPress={() => stepMinute(-1)} activeOpacity={0.7}>
+                        <Text style={styles.stepperBtnText}>‹</Text>
+                      </TouchableOpacity>
+                      <Text style={styles.stepperValue}>{pad(time.minute)}</Text>
+                      <TouchableOpacity style={styles.stepperBtn} onPress={() => stepMinute(1)} activeOpacity={0.7}>
+                        <Text style={styles.stepperBtnText}>›</Text>
+                      </TouchableOpacity>
                     </View>
                   </View>
                 </View>
-                <View style={styles.timePickerRow}>
+                <View style={styles.periodRow}>
                   {(['AM', 'PM'] as const).map((p) => (
                     <TouchableOpacity
                       key={p}
-                      style={[styles.chip, time.period === p && styles.chipActive]}
+                      style={[styles.periodBtn, time.period === p && styles.periodBtnActive]}
                       onPress={() => setTime((prev) => ({ ...prev, period: p }))}
                       activeOpacity={0.7}
                     >
-                      <Text style={time.period === p ? styles.chipTextActive : styles.chipText}>{p}</Text>
+                      <Text style={time.period === p ? styles.periodTextActive : styles.periodText}>{p}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -392,6 +402,23 @@ export default function EventsScreen() {
                   multiline
                 />
               </View>
+
+              <View style={{ marginBottom: spacing.md }}>
+                <Text style={styles.fieldLabel}>{t('events.attachImages')}</Text>
+                <View style={styles.attachRow}>
+                  <TouchableOpacity style={styles.attachBtn} onPress={pickImages} activeOpacity={0.7}>
+                    <Text style={styles.attachText}>{t('events.attachImages')}</Text>
+                  </TouchableOpacity>
+                </View>
+                {pendingFiles.length > 0 ? (
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: spacing.sm }}>
+                    {pendingFiles.map((f, i) => (
+                      <Image key={i} source={{ uri: URL.createObjectURL(f) }} style={styles.imagePreview} />
+                    ))}
+                  </View>
+                ) : null}
+                {saving && pendingFiles.length > 0 ? <Text style={styles.fieldLabel}>{t('events.uploadingImages')}</Text> : null}
+              </View>
             </ScrollView>
             <View style={styles.modalActions}>
               <TouchableOpacity style={styles.cancelButton} onPress={() => setModalOpen(false)}>
@@ -407,3 +434,42 @@ export default function EventsScreen() {
     </View>
   );
 }
+
+function EventImage({ url }: { url: string }) {
+  const { palette } = useTheme();
+  const [src, setSrc] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const token = await tokenStorage.getItem('accessToken');
+        const headers: Record<string, string> = {};
+        if (token) headers.Authorization = `Bearer ${token}`;
+        const res = await fetch(`${API_BASE_URL}${url}`, { headers });
+        if (!res.ok) throw new Error('image fetch failed');
+        const blob = await res.blob();
+        if (cancelled) return;
+        setSrc(URL.createObjectURL(blob));
+      } catch {
+        if (!cancelled) setSrc(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [url]);
+
+  if (!src) {
+    return (
+      <View style={[stylesPlaceholder.image, { backgroundColor: palette.surfaceAlt }]}>
+        <ActivityIndicator size="small" color={palette.primary} />
+      </View>
+    );
+  }
+  return <Image source={{ uri: src }} style={stylesPlaceholder.image} />;
+}
+
+const stylesPlaceholder = StyleSheet.create({
+  image: { width: 72, height: 72, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+});
