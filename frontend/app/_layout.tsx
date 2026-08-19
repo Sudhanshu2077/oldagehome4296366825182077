@@ -54,6 +54,11 @@ function NavShell() {
         <Stack.Screen name="cashbook/list" options={{ headerShown: true, title: 'CASH BOOK' }} />
         <Stack.Screen name="cashbook/new" options={{ headerShown: true, title: 'New Entry' }} />
         <Stack.Screen name="cashbook/[id]" options={{ headerShown: true, title: 'Entry Details' }} />
+        <Stack.Screen name="yearwise-admission/list" options={{ headerShown: true, title: 'YEAR-WISE ADMISSION REGISTER' }} />
+        <Stack.Screen name="yearwise-admission/new" options={{ headerShown: true, title: 'New Entry' }} />
+        <Stack.Screen name="yearwise-admission/[id]" options={{ headerShown: true, title: 'Entry Details' }} />
+        <Stack.Screen name="resident-attendance/list" options={{ headerShown: true, title: 'RESIDENT ATTENDANCE REGISTER' }} />
+        <Stack.Screen name="resident-attendance/[date]" options={{ headerShown: true, title: 'Daily Attendance' }} />
       </Stack>
       <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />
     </NavThemeProvider>

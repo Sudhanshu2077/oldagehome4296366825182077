@@ -20,6 +20,8 @@ import { distributionModule } from './distribution/index.js';
 import { schemaRegisterModule } from './schema-register/index.js';
 import { medicalModule } from './medical/index.js';
 import { cashbookModule } from './cashbook/index.js';
+import { yearwiseAdmissionModule } from './yearwise-admission/index.js';
+import { residentAttendanceModule } from './resident-attendance/index.js';
 import { inquiriesModule } from './inquiries/routes/index.js';
 import { announcementsModule } from './announcements/routes/index.js';
 import { eventsModule } from './events/routes/index.js';
@@ -53,6 +55,8 @@ const modules: FastifyPluginAsync[] = [
   schemaRegisterModule,
   medicalModule,
   cashbookModule,
+  yearwiseAdmissionModule,
+  residentAttendanceModule,
   inquiriesModule,
   announcementsModule,
   eventsModule,

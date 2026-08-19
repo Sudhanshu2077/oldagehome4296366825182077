@@ -82,6 +82,10 @@ export default function RegistersScreen() {
               router.push('/medical/list');
             } else if (item.id === 'R8') {
               router.push('/cashbook/list');
+            } else if (item.id === 'R10') {
+              router.push('/yearwise-admission/list');
+            } else if (item.id === 'R11') {
+              router.push('/resident-attendance/list');
             } else {
               router.push({ pathname: '/register/[id]', params: { id: item.id, title: item.title } });
             }

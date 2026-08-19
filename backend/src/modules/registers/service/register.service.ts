@@ -15,8 +15,8 @@ export const REGISTER_TITLES: Record<RegisterScopeId, { en: string; mr: string }
   R7: { en: 'MEDICAL REGISTER', mr: 'वैद्यकीय तपासणी रजिस्टर' },
   R8: { en: 'CASH BOOK', mr: 'रोख रजिस्टर' },
   R9: { en: 'SOURCE-VERIFIED REGISTER', mr: 'स्रोत-पडताळलेले रजिस्टर' },
-  R10: { en: '', mr: '' },
-  R11: { en: '', mr: '' },
+  R10: { en: 'YEAR-WISE ADMISSION REGISTER', mr: 'वर्षनिहाय प्रवेश रजिस्टर' },
+  R11: { en: 'RESIDENT ATTENDANCE REGISTER', mr: 'निवासी हजेरी नोंदवही' },
   R12: { en: '', mr: '' },
   R13: { en: '', mr: '' },
 };
