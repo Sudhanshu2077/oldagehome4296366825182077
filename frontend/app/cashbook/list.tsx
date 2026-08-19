@@ -16,6 +16,8 @@ import { API_BASE_URL } from '../../src/config/env';
 import { spacing, radii } from '../../src/config/theme';
 import { useTheme } from '../../src/config/ThemeContext';
 import { useI18n } from '../../src/i18n';
+import { useSamples } from '../../src/sample/SampleContext';
+import { SampleBadge, SampleBanner } from '../../src/components/ui';
 
 interface CashbookRow {
   id: string;
@@ -31,6 +33,7 @@ interface CashbookRow {
   bankRupees: number;
   bankPaise: number;
   remarks: string;
+  __sample?: boolean;
 }
 
 interface HeaderInfo {
@@ -49,6 +52,7 @@ const STATUS_COLORS: Record<string, string> = {
 export default function CashbookListScreen() {
   const { palette } = useTheme();
   const { t, lang } = useI18n();
+  const { withSamples, samplesFor } = useSamples();
   const [rows, setRows] = useState<CashbookRow[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -186,6 +190,7 @@ export default function CashbookListScreen() {
       </View>
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
+      {rows.length === 0 && samplesFor('reg.cashbook', 1).length > 0 ? <SampleBanner /> : null}
 
       <View style={styles.headRow}>
         <Text style={[styles.cell, styles.headCell]}>{t('cb.srNo')}</Text>
@@ -199,7 +204,7 @@ export default function CashbookListScreen() {
       </View>
 
       <FlatList
-        data={rows}
+        data={withSamples(rows, 'reg.cashbook', 3)}
         keyExtractor={(r) => r.id}
         contentContainerStyle={{ paddingBottom: spacing.xl }}
         ListEmptyComponent={<Text style={styles.empty}>{t('cb.listEmpty')}</Text>}
@@ -213,6 +218,7 @@ export default function CashbookListScreen() {
             <Text style={styles.cell}>{item.cashRupees}.{String(item.cashPaise).padStart(2, '0')}</Text>
             <Text style={styles.cell}>{item.bankRupees}.{String(item.bankPaise).padStart(2, '0')}</Text>
             <View style={styles.cell}>
+              {item.__sample ? <SampleBadge /> : null}
               <View style={[styles.statusBadge, { backgroundColor: STATUS_COLORS[item.status] ?? '#6b7280' }]}>
                 <Text style={styles.statusText}>{t(`cb.status${item.status}`)}</Text>
               </View>

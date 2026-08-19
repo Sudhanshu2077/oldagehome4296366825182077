@@ -6,6 +6,8 @@ import { useAuth } from '../../src/auth/AuthContext';
 import { spacing, radii } from '../../src/config/theme';
 import { useTheme } from '../../src/config/ThemeContext';
 import { useI18n } from '../../src/i18n';
+import { useSamples } from '../../src/sample/SampleContext';
+import { SampleBadge, SampleBanner } from '../../src/components/ui';
 
 interface AdmissionRow {
   id: string;
@@ -14,6 +16,7 @@ interface AdmissionRow {
   name: string;
   currentAge: number | null;
   createdAt: string;
+  __sample?: boolean;
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -31,6 +34,7 @@ export default function AdmissionListScreen() {
   const { user } = useAuth();
   const { palette } = useTheme();
   const { t } = useI18n();
+  const { withSamples, samplesFor } = useSamples();
   const [rows, setRows] = useState<AdmissionRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -106,14 +110,16 @@ export default function AdmissionListScreen() {
       </View>
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
+      {rows.length === 0 && samplesFor('reg.admission', 1).length > 0 ? <SampleBanner /> : null}
 
       <FlatList
-        data={rows}
+        data={withSamples(rows, 'reg.admission', 3)}
         keyExtractor={(r) => r.id}
         contentContainerStyle={{ paddingBottom: spacing.xxl }}
         ListEmptyComponent={<Text style={styles.empty}>{t('admission.listEmpty')}</Text>}
         renderItem={({ item }) => (
           <TouchableOpacity style={styles.card} onPress={() => router.push({ pathname: '/admission/[id]', params: { id: item.id } })}>
+            {item.__sample ? <SampleBadge /> : null}
             <View style={styles.cardTop}>
               <Text style={styles.appNo}>{item.applicationNumber}</Text>
               <View style={[styles.statusBadge, { backgroundColor: STATUS_COLORS[item.status] ?? '#6b7280' }]}>

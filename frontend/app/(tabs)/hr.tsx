@@ -4,6 +4,7 @@ import { Link } from 'expo-router';
 import { spacing, radii } from '../../src/config/theme';
 import { useTheme } from '../../src/config/ThemeContext';
 import { useI18n } from '../../src/i18n';
+import { ScreenHeader } from '../../src/components/ui';
 
 interface HrModule {
   code: string;
@@ -28,29 +29,41 @@ export default function HrLifecycleScreen() {
 
   const styles = useMemo(() => StyleSheet.create({
     container: { flex: 1, backgroundColor: palette.background },
-    heading: { fontSize: 18, fontWeight: '700', color: palette.primaryDark, padding: spacing.md, paddingBottom: 0 },
-    card: { flex: 1, backgroundColor: palette.surface, borderRadius: radii.md, padding: spacing.lg, minHeight: 120, borderWidth: 1, borderColor: palette.border },
-    cardTitle: { fontSize: 16, fontWeight: '700', color: palette.primaryDark },
+    card: { flex: 1, backgroundColor: palette.surface, borderRadius: radii.md, borderWidth: 1, borderColor: palette.border, padding: spacing.lg, minHeight: 112 },
+    cardTop: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+    monogram: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
+    monogramText: { fontSize: 16, fontWeight: '800', color: palette.textInverse },
+    cardTitle: { fontSize: 15, fontWeight: '700', color: palette.primaryDark, flex: 1 },
     cardDescription: { fontSize: 11, color: palette.textMuted, marginTop: spacing.sm },
+    code: { fontSize: 10, color: palette.textMuted, marginTop: spacing.xs, fontFamily: 'monospace' },
   }), [palette]);
 
   return (
     <View style={styles.container}>
-      <Text style={styles.heading}>{t('hr.title')}</Text>
+      <ScreenHeader title={t('hr.title')} subtitle={t('hr.subtitle')} />
       <FlatList
         data={HR_MODULES}
         keyExtractor={(m) => m.code}
         numColumns={2}
-        columnWrapperStyle={{ gap: spacing.md }}
-        contentContainerStyle={{ padding: spacing.md, gap: spacing.md }}
-        renderItem={({ item }) => (
-          <Link href={`/module/${item.code}`} asChild>
-            <TouchableOpacity style={styles.card}>
-              <Text style={styles.cardTitle}>{t(item.titleKey)}</Text>
-              <Text style={styles.cardDescription}>{t(`${item.titleKey}.desc`)}</Text>
-            </TouchableOpacity>
-          </Link>
-        )}
+        columnWrapperStyle={{ gap: spacing.sm, paddingHorizontal: spacing.md }}
+        contentContainerStyle={{ gap: spacing.sm, paddingBottom: spacing.xxl }}
+        renderItem={({ item }) => {
+          const label = t(item.titleKey);
+          return (
+            <Link href={`/module/${item.code}`} asChild>
+              <TouchableOpacity style={[styles.card, { flexBasis: '47%', flexGrow: 1 }]} activeOpacity={0.85}>
+                <View style={styles.cardTop}>
+                  <View style={[styles.monogram, { backgroundColor: palette.primary }]}>
+                    <Text style={styles.monogramText}>{label.charAt(0).toUpperCase()}</Text>
+                  </View>
+                  <Text style={styles.cardTitle} numberOfLines={2}>{label}</Text>
+                </View>
+                <Text style={styles.cardDescription}>{t(`${item.titleKey}.desc`)}</Text>
+                <Text style={styles.code}>{item.code}</Text>
+              </TouchableOpacity>
+            </Link>
+          );
+        }}
       />
     </View>
   );

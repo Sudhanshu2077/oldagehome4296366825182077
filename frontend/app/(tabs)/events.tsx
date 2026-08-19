@@ -8,7 +8,9 @@ import { useAuth } from '../../src/auth/AuthContext';
 import { spacing, radii } from '../../src/config/theme';
 import { useTheme } from '../../src/config/ThemeContext';
 import { useI18n } from '../../src/i18n';
+import { useSamples } from '../../src/sample/SampleContext';
 import { CalendarPicker } from '../../src/components/CalendarPicker';
+import { SampleBanner, SampleBadge } from '../../src/components/ui';
 
 interface EventItem {
   id: string;
@@ -18,6 +20,7 @@ interface EventItem {
   eventDate: string;
   photoUrl: string;
   photos: string[];
+  __sample?: boolean;
 }
 
 const HOURS_MIN = 1;
@@ -49,6 +52,7 @@ export default function EventsScreen() {
   const { palette } = useTheme();
   const { t, lang } = useI18n();
   const { user } = useAuth();
+  const { withSamples, samplesFor } = useSamples();
   const [view, setView] = useState<'options' | 'past'>('options');
   const [items, setItems] = useState<EventItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -318,8 +322,10 @@ export default function EventsScreen() {
 
         <Text style={styles.sectionLabel}>{t('events.upcomingEvents')}</Text>
         {upcoming.length === 0 ? <Text style={styles.empty}>{t('events.empty')}</Text> : null}
-        {upcoming.map((ev) => (
+        {upcoming.length === 0 && samplesFor('events', 1).length > 0 ? <SampleBanner /> : null}
+        {withSamples(upcoming, 'events', 3).map((ev) => (
           <View key={ev.id} style={styles.card}>
+            {ev.__sample ? <SampleBadge /> : null}
             <Text style={styles.title}>{lang === 'mr' ? (ev.titleMr || ev.title) : ev.title}</Text>
             <Text style={styles.date}>{formatEventDate(ev.eventDate)}</Text>
             {ev.description ? <Text style={styles.body}>{ev.description}</Text> : null}

@@ -16,6 +16,8 @@ import { API_BASE_URL } from '../../src/config/env';
 import { spacing, radii } from '../../src/config/theme';
 import { useTheme } from '../../src/config/ThemeContext';
 import { useI18n } from '../../src/i18n';
+import { useSamples } from '../../src/sample/SampleContext';
+import { SampleBadge, SampleBanner } from '../../src/components/ui';
 
 interface InwardRow {
   id: string;
@@ -27,6 +29,7 @@ interface InwardRow {
   receivedDate: string | null;
   subject: string;
   issuedTo: string;
+  __sample?: boolean;
 }
 
 interface HeaderInfo {
@@ -45,6 +48,7 @@ const STATUS_COLORS: Record<string, string> = {
 export default function InwardListScreen() {
   const { palette } = useTheme();
   const { t, lang } = useI18n();
+  const { withSamples, samplesFor } = useSamples();
   const [rows, setRows] = useState<InwardRow[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -193,6 +197,7 @@ export default function InwardListScreen() {
       </View>
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
+      {rows.length === 0 && samplesFor('reg.inward', 1).length > 0 ? <SampleBanner /> : null}
 
       <View style={styles.headRow}>
         <Text style={[styles.cell, styles.headCell]}>{t('inward.srNoFileNo')}</Text>
@@ -205,7 +210,7 @@ export default function InwardListScreen() {
       </View>
 
       <FlatList
-        data={rows}
+        data={withSamples(rows, 'reg.inward', 3)}
         keyExtractor={(r) => r.id}
         contentContainerStyle={{ paddingBottom: spacing.xl }}
         ListEmptyComponent={<Text style={styles.empty}>{t('inward.listEmpty')}</Text>}
@@ -218,6 +223,7 @@ export default function InwardListScreen() {
             <Text style={styles.wideCell} numberOfLines={2}>{item.subject}</Text>
             <Text style={styles.wideCell}>{item.issuedTo}</Text>
             <View style={styles.cell}>
+              {item.__sample ? <SampleBadge /> : null}
               <View style={[styles.statusBadge, { backgroundColor: STATUS_COLORS[item.status] ?? '#6b7280' }]}>
                 <Text style={styles.statusText}>{t(`inward.status${item.status}`)}</Text>
               </View>

@@ -16,6 +16,8 @@ import { API_BASE_URL } from '../../src/config/env';
 import { spacing, radii } from '../../src/config/theme';
 import { useTheme } from '../../src/config/ThemeContext';
 import { useI18n } from '../../src/i18n';
+import { useSamples } from '../../src/sample/SampleContext';
+import { SampleBadge, SampleBanner } from '../../src/components/ui';
 
 interface MedicalRow {
   id: string;
@@ -28,6 +30,7 @@ interface MedicalRow {
   medicineAllowances: string;
   medicalOfficerName: string;
   remarks: string;
+  __sample?: boolean;
 }
 
 interface HeaderInfo {
@@ -46,6 +49,7 @@ const STATUS_COLORS: Record<string, string> = {
 export default function MedicalListScreen() {
   const { palette } = useTheme();
   const { t, lang } = useI18n();
+  const { withSamples, samplesFor } = useSamples();
   const [rows, setRows] = useState<MedicalRow[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -188,6 +192,7 @@ export default function MedicalListScreen() {
       </View>
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
+      {rows.length === 0 && samplesFor('reg.medical', 1).length > 0 ? <SampleBanner /> : null}
 
       <View style={styles.headRow}>
         <Text style={[styles.cell, styles.headCell]}>{t('med.srNo')}</Text>
@@ -201,7 +206,7 @@ export default function MedicalListScreen() {
       </View>
 
       <FlatList
-        data={rows}
+        data={withSamples(rows, 'reg.medical', 3)}
         keyExtractor={(r) => r.id}
         contentContainerStyle={{ paddingBottom: spacing.xl }}
         ListEmptyComponent={<Text style={styles.empty}>{t('med.listEmpty')}</Text>}
@@ -215,6 +220,7 @@ export default function MedicalListScreen() {
             <Text style={styles.cell} numberOfLines={2}>{item.medicineAllowances}</Text>
             <Text style={styles.wideCell} numberOfLines={2}>{item.medicalOfficerName}</Text>
             <View style={styles.cell}>
+              {item.__sample ? <SampleBadge /> : null}
               <View style={[styles.statusBadge, { backgroundColor: STATUS_COLORS[item.status] ?? '#6b7280' }]}>
                 <Text style={styles.statusText}>{t(`med.status${item.status}`)}</Text>
               </View>

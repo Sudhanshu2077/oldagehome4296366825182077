@@ -16,6 +16,8 @@ import { API_BASE_URL } from '../../src/config/env';
 import { spacing, radii } from '../../src/config/theme';
 import { useTheme } from '../../src/config/ThemeContext';
 import { useI18n } from '../../src/i18n';
+import { useSamples } from '../../src/sample/SampleContext';
+import { SampleBadge, SampleBanner } from '../../src/components/ui';
 
 interface InOutRow {
   id: string;
@@ -30,6 +32,7 @@ interface InOutRow {
   returnDate: string | null;
   returnTime: string;
   remarks: string;
+  __sample?: boolean;
 }
 
 interface HeaderInfo {
@@ -50,6 +53,7 @@ type ViewMode = 'all' | 'active' | 'returned' | 'late';
 export default function EmployeeInOutListScreen() {
   const { palette } = useTheme();
   const { t, lang } = useI18n();
+  const { withSamples, samplesFor } = useSamples();
   const [rows, setRows] = useState<InOutRow[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -219,6 +223,7 @@ export default function EmployeeInOutListScreen() {
       </View>
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
+      {rows.length === 0 && samplesFor('reg.employeeInout', 1).length > 0 ? <SampleBanner /> : null}
 
       <View style={styles.headRow}>
         <Text style={[styles.cell, styles.headCell]}>{t('inout.srNo')}</Text>
@@ -234,7 +239,7 @@ export default function EmployeeInOutListScreen() {
       </View>
 
       <FlatList
-        data={rows}
+        data={withSamples(rows, 'reg.employeeInout', 3)}
         keyExtractor={(r) => r.id}
         contentContainerStyle={{ paddingBottom: spacing.xl }}
         ListEmptyComponent={<Text style={styles.empty}>{view === 'active' ? t('inout.noActiveOut') : t('inout.listEmpty')}</Text>}
@@ -250,6 +255,7 @@ export default function EmployeeInOutListScreen() {
             <Text style={styles.cell}>{item.returnTime}</Text>
             <Text style={styles.wideCell} numberOfLines={2}>{item.remarks}</Text>
             <View style={styles.cell}>
+              {item.__sample ? <SampleBadge /> : null}
               <View style={[styles.statusBadge, { backgroundColor: STATUS_COLORS[item.status] ?? '#6b7280' }]}>
                 <Text style={styles.statusText}>{item.status === 'OUT' ? t('inout.activeOut') : t(`inout.status${item.status}`)}</Text>
               </View>

@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { AuthProvider } from '../src/auth/AuthContext';
 import { ThemeProvider, useTheme } from '../src/config/ThemeContext';
 import { LanguageProvider, useI18n } from '../src/i18n';
+import { SampleProvider } from '../src/sample/SampleContext';
 
 function NavShell() {
   const { mode, palette } = useTheme();
@@ -71,7 +72,9 @@ export default function RootLayout() {
     <ThemeProvider>
       <LanguageProvider>
         <AuthProvider>
-          <NavShell />
+          <SampleProvider>
+            <NavShell />
+          </SampleProvider>
         </AuthProvider>
       </LanguageProvider>
     </ThemeProvider>

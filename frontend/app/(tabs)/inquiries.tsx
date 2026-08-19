@@ -5,6 +5,8 @@ import { useAuth } from '../../src/auth/AuthContext';
 import { spacing, radii } from '../../src/config/theme';
 import { useTheme } from '../../src/config/ThemeContext';
 import { useI18n } from '../../src/i18n';
+import { useSamples } from '../../src/sample/SampleContext';
+import { SampleBadge, SampleBanner } from '../../src/components/ui';
 
 interface Inquiry {
   id: string;
@@ -15,6 +17,7 @@ interface Inquiry {
   message: string;
   status: string;
   createdAt: string;
+  __sample?: boolean;
 }
 
 const STATUSES = ['open', 'in-progress', 'resolved', 'closed'];
@@ -23,6 +26,7 @@ export default function InquiriesScreen() {
   const { palette } = useTheme();
   const { t } = useI18n();
   const { user } = useAuth();
+  const { withSamples, samplesFor } = useSamples();
   const [items, setItems] = useState<Inquiry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -124,6 +128,9 @@ export default function InquiriesScreen() {
 
   if (loading) return <View style={styles.center}><ActivityIndicator size="large" color={palette.primary} /></View>;
 
+  const shown = withSamples(items, 'inquiries', 3);
+  const showBanner = items.length === 0 && samplesFor('inquiries', 1).length > 0;
+
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
@@ -136,13 +143,15 @@ export default function InquiriesScreen() {
       </View>
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
+      {showBanner ? <SampleBanner /> : null}
       <FlatList
         contentContainerStyle={{ padding: spacing.md }}
-        data={items}
+        data={shown}
         keyExtractor={(i) => i.id}
         ListEmptyComponent={<Text style={styles.empty}>{t('inquiries.empty')}</Text>}
         renderItem={({ item }) => (
           <View style={styles.card}>
+            {item.__sample ? <SampleBadge /> : null}
             <View style={styles.rowBetween}>
               <Text style={styles.name}>{item.name}</Text>
               <Text style={[styles.status, { color: STATUS_COLORS[item.status] ?? palette.textMuted }]}>{item.status}</Text>

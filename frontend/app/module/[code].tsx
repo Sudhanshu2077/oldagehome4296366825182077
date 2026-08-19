@@ -18,6 +18,8 @@ import { spacing, radii } from '../../src/config/theme';
 import { useTheme } from '../../src/config/ThemeContext';
 import { useI18n } from '../../src/i18n';
 import { fieldKeyToI18n } from '../../src/i18n/fieldKeys';
+import { useSamples } from '../../src/sample/SampleContext';
+import { SampleBadge, SampleBanner } from '../../src/components/ui';
 
 interface ModuleField {
   key: string;
@@ -44,6 +46,7 @@ export default function ModuleScreen() {
   const { user } = useAuth();
   const { palette } = useTheme();
   const { t, lang } = useI18n();
+  const { moduleSamples } = useSamples();
   const [meta, setMeta] = useState<ModuleMeta | null>(null);
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
@@ -177,6 +180,7 @@ export default function ModuleScreen() {
   if (!meta) return <View style={styles.center}><Text style={styles.error}>{t('module.notFound')}: {code}</Text></View>;
 
   const statusField = meta.workflow?.field ?? 'status';
+  const shown = rows.length > 0 ? rows : moduleSamples(code, meta.fields ?? []);
 
   function fieldLabel(f: ModuleField): string {
     if (lang === 'mr' && f.labelMr) return f.labelMr;
@@ -204,17 +208,19 @@ export default function ModuleScreen() {
       />
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
+      {rows.length === 0 && shown.length > 0 ? <SampleBanner /> : null}
 
       <ScrollView horizontal>
         <View style={{ flex: 1 }}>
           <View style={[styles.row, styles.headRow]}>
+            <Text style={[styles.cell, { width: 80 }]} />
             {displayFields.map((f) => (
               <Text key={f.key} style={[styles.cell, styles.headCell]}>{fieldLabel(f)}</Text>
             ))}
             <Text style={[styles.cell, styles.headCell]}>{t('module.actions')}</Text>
           </View>
           <FlatList
-            data={rows}
+            data={shown}
             keyExtractor={(r) => r.id}
             ListEmptyComponent={<Text style={styles.empty}>{t('module.noRecords')}</Text>}
             renderItem={({ item }) => {
@@ -222,6 +228,11 @@ export default function ModuleScreen() {
               const nextStates = meta.workflow?.transitions[currentStatus] ?? [];
               return (
                 <View style={styles.row}>
+                  {item.__sample === true ? (
+                    <View style={[styles.cell, { width: 80 }]}>
+                      <SampleBadge />
+                    </View>
+                  ) : null}
                   {displayFields.map((f) => {
                     const v = item[f.key];
                     const text = v === null || v === undefined ? '' : typeof v === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(v) ? v.slice(0, 10) : String(v);

@@ -16,6 +16,8 @@ import { API_BASE_URL } from '../../src/config/env';
 import { spacing, radii } from '../../src/config/theme';
 import { useTheme } from '../../src/config/ThemeContext';
 import { useI18n } from '../../src/i18n';
+import { useSamples } from '../../src/sample/SampleContext';
+import { SampleBadge, SampleBanner } from '../../src/components/ui';
 
 interface YwaRow {
   id: string;
@@ -31,6 +33,7 @@ interface YwaRow {
   officerName: string;
   residentId: string | null;
   registerYear: string;
+  __sample?: boolean;
 }
 
 interface HeaderInfo {
@@ -51,6 +54,7 @@ const STATUS_COLORS: Record<string, string> = {
 export default function YwaListScreen() {
   const { palette } = useTheme();
   const { t, lang } = useI18n();
+  const { withSamples, samplesFor } = useSamples();
   const [rows, setRows] = useState<YwaRow[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -182,6 +186,7 @@ export default function YwaListScreen() {
       </View>
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
+      {rows.length === 0 && samplesFor('reg.yearwise', 1).length > 0 ? <SampleBanner /> : null}
 
       <View style={styles.headRow}>
         <Text style={[styles.cell, styles.headCell]}>{t('ywa.srNo')}</Text>
@@ -194,7 +199,7 @@ export default function YwaListScreen() {
       </View>
 
       <FlatList
-        data={rows}
+        data={withSamples(rows, 'reg.yearwise', 3)}
         keyExtractor={(r) => r.id}
         contentContainerStyle={{ paddingBottom: spacing.xl }}
         ListEmptyComponent={<Text style={styles.empty}>{t('ywa.listEmpty')}</Text>}
@@ -207,6 +212,7 @@ export default function YwaListScreen() {
             <Text style={styles.cell}>{item.aadhaarMasked || item.aadhaar || '—'}</Text>
             <Text style={styles.cell} numberOfLines={1}>{item.officerName || '—'}</Text>
             <View style={styles.cell}>
+              {item.__sample ? <SampleBadge /> : null}
               <View style={[styles.statusBadge, { backgroundColor: STATUS_COLORS[item.status] ?? '#6b7280' }]}>
                 <Text style={styles.statusText}>{t(`ywa.status${item.status}`)}</Text>
               </View>

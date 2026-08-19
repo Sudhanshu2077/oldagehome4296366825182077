@@ -16,6 +16,8 @@ import { API_BASE_URL } from '../../src/config/env';
 import { spacing, radii } from '../../src/config/theme';
 import { useTheme } from '../../src/config/ThemeContext';
 import { useI18n } from '../../src/i18n';
+import { useSamples } from '../../src/sample/SampleContext';
+import { SampleBadge, SampleBanner } from '../../src/components/ui';
 
 interface SessionRow {
   id: string;
@@ -24,6 +26,7 @@ interface SessionRow {
   status: string;
   entries: unknown[];
   corrections: unknown[];
+  __sample?: boolean;
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -34,6 +37,7 @@ const STATUS_COLORS: Record<string, string> = {
 export default function AttListScreen() {
   const { palette } = useTheme();
   const { t, lang } = useI18n();
+  const { withSamples, samplesFor } = useSamples();
   const [sessions, setSessions] = useState<SessionRow[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -71,6 +75,7 @@ export default function AttListScreen() {
     sessionSub: { fontSize: 11, color: palette.textMuted, marginTop: 2 },
     statusBadge: { borderRadius: radii.pill, paddingHorizontal: spacing.sm, paddingVertical: 3 },
     statusText: { fontSize: 10, fontWeight: '700', color: '#ffffff' },
+    rightBox: { flexDirection: 'column', alignItems: 'flex-end', gap: 4 },
     pagination: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: spacing.md, padding: spacing.md },
     pageBtn: { borderWidth: 1, borderColor: palette.border, borderRadius: radii.sm, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm },
     pageBtnDisabled: { opacity: 0.4 },
@@ -169,10 +174,11 @@ export default function AttListScreen() {
       </View>
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
+      {sessions.length === 0 && samplesFor('reg.attendance', 1).length > 0 ? <SampleBanner /> : null}
 
       <Text style={styles.sectionLabel}>{t('att.submitSummary')}</Text>
       <FlatList
-        data={sessions}
+        data={withSamples(sessions, 'reg.attendance', 3)}
         keyExtractor={(s) => s.id}
         contentContainerStyle={{ paddingBottom: spacing.xl }}
         ListEmptyComponent={<Text style={styles.empty}>{t('att.listEmpty')}</Text>}
@@ -182,8 +188,11 @@ export default function AttListScreen() {
               <Text style={styles.sessionId}>{item.sessionId}</Text>
               <Text style={styles.sessionSub}>{String(item.attendanceDate).slice(0, 10)} · {item.entries?.length ?? 0} {t('att.marked')}</Text>
             </View>
-            <View style={[styles.statusBadge, { backgroundColor: STATUS_COLORS[item.status] ?? '#6b7280' }]}>
-              <Text style={styles.statusText}>{item.status}</Text>
+            <View style={styles.rightBox}>
+              {item.__sample ? <SampleBadge /> : null}
+              <View style={[styles.statusBadge, { backgroundColor: STATUS_COLORS[item.status] ?? '#6b7280' }]}>
+                <Text style={styles.statusText}>{item.status}</Text>
+              </View>
             </View>
           </TouchableOpacity>
         )}

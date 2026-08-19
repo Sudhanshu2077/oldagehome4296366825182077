@@ -4,12 +4,14 @@ import { router } from 'expo-router';
 import { useAuth } from '../../src/auth/AuthContext';
 import { useTheme } from '../../src/config/ThemeContext';
 import { useI18n, LANGUAGES } from '../../src/i18n';
+import { useSamples } from '../../src/sample/SampleContext';
 import { spacing, radii } from '../../src/config/theme';
 
 export default function ProfileScreen() {
   const { user, signOut } = useAuth();
   const { palette, mode, toggle } = useTheme();
   const { t, lang, setLang } = useI18n();
+  const { showSamples, setShowSamples } = useSamples();
 
   const [pushNotif, setPushNotif] = useState(true);
   const [emailNotif, setEmailNotif] = useState(true);
@@ -188,6 +190,9 @@ export default function ProfileScreen() {
       <View style={[styles.card, { backgroundColor: palette.surface, borderColor: palette.border }]}>
         <SettingRow label={t('settings.offlineMode')} hint={t('settings.offlineModeHint')}>
           <RowToggle value={offlineMode} onValueChange={setOfflineMode} />
+        </SettingRow>
+        <SettingRow label={t('settings.showSamples')} hint={t('settings.showSamplesHint')}>
+          <RowToggle value={showSamples} onValueChange={setShowSamples} />
         </SettingRow>
         <ChevronRow label={t('settings.clearCache')} hint={t('settings.clearCacheHint')} onPress={clearCache} />
       </View>

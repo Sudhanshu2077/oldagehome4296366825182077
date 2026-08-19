@@ -5,6 +5,8 @@ import { useAuth } from '../../src/auth/AuthContext';
 import { spacing, radii } from '../../src/config/theme';
 import { useTheme } from '../../src/config/ThemeContext';
 import { useI18n } from '../../src/i18n';
+import { useSamples } from '../../src/sample/SampleContext';
+import { SampleBadge, SampleBanner } from '../../src/components/ui';
 
 interface Announcement {
   id: string;
@@ -13,12 +15,14 @@ interface Announcement {
   body: string;
   bodyMr: string;
   publishedAt: string;
+  __sample?: boolean;
 }
 
 export default function AnnouncementsScreen() {
   const { palette } = useTheme();
   const { t, lang } = useI18n();
   const { user } = useAuth();
+  const { withSamples, samplesFor } = useSamples();
   const [items, setItems] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -99,6 +103,9 @@ export default function AnnouncementsScreen() {
 
   if (loading) return <View style={styles.center}><ActivityIndicator size="large" color={palette.primary} /></View>;
 
+  const shown = withSamples(items, 'announcements', 3);
+  const showBanner = items.length === 0 && samplesFor('announcements', 1).length > 0;
+
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
@@ -111,13 +118,15 @@ export default function AnnouncementsScreen() {
       </View>
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
+      {showBanner ? <SampleBanner /> : null}
       <FlatList
         contentContainerStyle={{ padding: spacing.md }}
-        data={items}
+        data={shown}
         keyExtractor={(i) => i.id}
         ListEmptyComponent={<Text style={styles.empty}>{t('announcements.empty')}</Text>}
         renderItem={({ item }) => (
           <View style={styles.card}>
+            {item.__sample ? <SampleBadge /> : null}
             <Text style={styles.title}>{lang === 'mr' ? (item.titleMr || item.title) : item.title}</Text>
             {lang === 'mr' && item.titleMr && item.title ? <Text style={styles.subtitle}>{item.title}</Text> : null}
             <Text style={styles.body}>{lang === 'mr' ? (item.bodyMr || item.body) : item.body}</Text>

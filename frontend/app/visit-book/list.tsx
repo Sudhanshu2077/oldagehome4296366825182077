@@ -16,6 +16,8 @@ import { API_BASE_URL } from '../../src/config/env';
 import { spacing, radii } from '../../src/config/theme';
 import { useTheme } from '../../src/config/ThemeContext';
 import { useI18n } from '../../src/i18n';
+import { useSamples } from '../../src/sample/SampleContext';
+import { SampleBadge, SampleBanner } from '../../src/components/ui';
 
 interface VisitBookRow {
   id: string;
@@ -25,6 +27,7 @@ interface VisitBookRow {
   officerName: string;
   officerPost: string;
   remark: string;
+  __sample?: boolean;
 }
 
 interface HeaderInfo {
@@ -43,6 +46,7 @@ const STATUS_COLORS: Record<string, string> = {
 export default function VisitBookListScreen() {
   const { palette } = useTheme();
   const { t, lang } = useI18n();
+  const { withSamples, samplesFor } = useSamples();
   const [rows, setRows] = useState<VisitBookRow[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -178,9 +182,10 @@ export default function VisitBookListScreen() {
       </View>
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
+      {rows.length === 0 && samplesFor('reg.visit', 1).length > 0 ? <SampleBanner /> : null}
 
       <FlatList
-        data={rows}
+        data={withSamples(rows, 'reg.visit', 3)}
         keyExtractor={(r) => r.id}
         contentContainerStyle={{ paddingBottom: spacing.xl }}
         ListEmptyComponent={<Text style={styles.empty}>{t('visitbook.listEmpty')}</Text>}
@@ -191,6 +196,7 @@ export default function VisitBookListScreen() {
             <Text style={[styles.cell, { width: 200 }]}>{item.officerName}{item.officerPost ? `, ${item.officerPost}` : ''}</Text>
             <Text style={[styles.cell, { width: 240 }]}>{item.remark}</Text>
             <View style={[styles.cell, { width: 100 }]}>
+              {item.__sample ? <SampleBadge /> : null}
               <View style={[styles.statusBadge, { backgroundColor: STATUS_COLORS[item.status] ?? '#6b7280' }]}>
                 <Text style={styles.statusText}>{t(`visitbook.status${item.status}`)}</Text>
               </View>

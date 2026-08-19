@@ -14,6 +14,9 @@ import { api, errorMessage } from '../../src/api/client';
 import { spacing, radii } from '../../src/config/theme';
 import { useTheme } from '../../src/config/ThemeContext';
 import { useI18n } from '../../src/i18n';
+import { useSamples } from '../../src/sample/SampleContext';
+import { sampleVitalsFor } from '../../src/sample/sampleData';
+import { SampleBadge, SampleBanner } from '../../src/components/ui';
 
 interface Resident {
   id: string;
@@ -21,6 +24,7 @@ interface Resident {
   residentNumber: string;
   gender?: string;
   age?: number;
+  __sample?: boolean;
 }
 
 interface Vital {
@@ -49,6 +53,7 @@ interface VitalsSummary {
 export default function HealthMonitoringScreen() {
   const { palette } = useTheme();
   const { t } = useI18n();
+  const { samplesFor } = useSamples();
   const [residents, setResidents] = useState<Resident[]>([]);
   const [vitals, setVitals] = useState<Vital[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,6 +72,7 @@ export default function HealthMonitoringScreen() {
   const [saving, setSaving] = useState(false);
   const [reportType, setReportType] = useState<'weekly' | 'monthly'>('weekly');
   const [reportMessage, setReportMessage] = useState<string | null>(null);
+  const [usingSamples, setUsingSamples] = useState(false);
 
   const styles = useMemo(() => StyleSheet.create({
     container: { flex: 1, backgroundColor: palette.background },
@@ -116,8 +122,22 @@ export default function HealthMonitoringScreen() {
         api.get('/m/residents', { params: { pageSize: 200 } }),
         api.get('/health-monitoring/vitals', { params: { pageSize: 500 } }),
       ]);
-      setResidents((residentsRes.data as { data: Resident[] }).data ?? []);
-      setVitals((vitalsRes.data as { data: Vital[] }).data ?? []);
+      const residentsData = (residentsRes.data as { data: Resident[] }).data ?? [];
+      const vitalsData = (vitalsRes.data as { data: Vital[] }).data ?? [];
+      if (residentsData.length === 0) {
+        const sampleResidents = samplesFor('health', 3) as unknown as Resident[];
+        setResidents(sampleResidents);
+        if (sampleResidents.length > 0) {
+          setVitals(sampleVitalsFor() as unknown as Vital[]);
+          setUsingSamples(true);
+          setError(null);
+          setLoading(false);
+          return;
+        }
+      }
+      setUsingSamples(false);
+      setResidents(residentsData);
+      setVitals(vitalsData);
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -229,6 +249,7 @@ export default function HealthMonitoringScreen() {
 
       {reportMessage ? <Text style={styles.success}>{reportMessage}</Text> : null}
       {error ? <Text style={styles.error}>{error}</Text> : null}
+      {usingSamples ? <SampleBanner /> : null}
 
       <FlatList
         data={residents}
@@ -241,6 +262,7 @@ export default function HealthMonitoringScreen() {
           const s = summaryFor(item.id);
           return (
             <View style={styles.card}>
+              {item.__sample ? <SampleBadge /> : null}
               <View style={styles.cardHeader}>
                 <View>
                   <Text style={styles.cardName}>{item.fullName}</Text>

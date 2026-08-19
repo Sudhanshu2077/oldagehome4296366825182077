@@ -5,6 +5,8 @@ import { api, errorMessage } from '../../src/api/client';
 import { spacing, radii } from '../../src/config/theme';
 import { useTheme } from '../../src/config/ThemeContext';
 import { useI18n } from '../../src/i18n';
+import { useSamples } from '../../src/sample/SampleContext';
+import { SampleBadge, SampleBanner } from '../../src/components/ui';
 
 type Section = 'overview' | 'books' | 'vouchers' | 'donations' | 'budgets' | 'statements';
 
@@ -142,6 +144,7 @@ function SectionWrap({ children, refreshing, onRefresh }: { children: React.Reac
 function OverviewSection({ refreshing }: { refreshing: boolean }) {
   const { palette } = useTheme();
   const { t } = useI18n();
+  const { samplesFor } = useSamples();
   const [incomes, setIncomes] = useState<Row[]>([]);
   const [expenses, setExpenses] = useState<Row[]>([]);
   const [vouchers, setVouchers] = useState<Row[]>([]);
@@ -161,10 +164,14 @@ function OverviewSection({ refreshing }: { refreshing: boolean }) {
         loadList('donations').catch(() => [] as Row[]),
         loadList('budgets', { f_status: 'approved' }).catch(() => [] as Row[]),
       ]);
-      setIncomes(inc); setExpenses(exp); setVouchers(vch); setDonations(don); setBudgets(bud);
+      setIncomes(inc.length ? inc : (samplesFor('finance.income', 3) as Row[]));
+      setExpenses(exp.length ? exp : (samplesFor('finance.expense', 3) as Row[]));
+      setVouchers(vch.length ? vch : (samplesFor('finance.voucher', 3) as Row[]));
+      setDonations(don.length ? don : (samplesFor('finance.donation', 3) as Row[]));
+      setBudgets(bud.length ? bud : (samplesFor('finance.budget', 3) as Row[]));
     } catch (err) { setError(errorMessage(err)); }
     finally { setLoading(false); }
-  }, []);
+  }, [samplesFor]);
 
   useEffect(() => { void load(); }, [load, rkey]);
 
@@ -197,6 +204,7 @@ function OverviewSection({ refreshing }: { refreshing: boolean }) {
 
   return (
     <SectionWrap refreshing={refreshing} onRefresh={load}>
+      {incomes.some((r) => (r as Row & { __sample?: boolean }).__sample === true) ? <SampleBanner /> : null}
       <View style={styles.kpiGrid}>
         <View style={styles.kpi}>
           <Text style={styles.kpiLabel}>{t('finance.monthIncome')}</Text>
@@ -263,6 +271,7 @@ function OverviewSection({ refreshing }: { refreshing: boolean }) {
 function BooksSection({ refreshing }: { refreshing: boolean }) {
   const { palette } = useTheme();
   const { t } = useI18n();
+  const { samplesFor } = useSamples();
   const [cash, setCash] = useState<Row[]>([]);
   const [bank, setBank] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
@@ -276,10 +285,11 @@ function BooksSection({ refreshing }: { refreshing: boolean }) {
         loadList('cash-book', { pageSize: 50 }).catch(() => [] as Row[]),
         loadList('bank-transactions', { pageSize: 50 }).catch(() => [] as Row[]),
       ]);
-      setCash(c); setBank(b);
+      setCash(c.length ? c : (samplesFor('finance.cash', 8) as Row[]));
+      setBank(b.length ? b : (samplesFor('finance.bank', 8) as Row[]));
     } catch (err) { setError(errorMessage(err)); }
     finally { setLoading(false); }
-  }, []);
+  }, [samplesFor]);
 
   useEffect(() => { void load(); }, [load, rkey]);
 
@@ -307,6 +317,7 @@ function BooksSection({ refreshing }: { refreshing: boolean }) {
 
   return (
     <SectionWrap refreshing={refreshing} onRefresh={load}>
+      {cash.some((r) => (r as Row & { __sample?: boolean }).__sample === true) ? <SampleBanner /> : null}
       <View style={styles.rowCard}>
         <View style={styles.pair}><Text style={styles.lbl}>{t('finance.cashBook')}</Text><Text style={styles.val}>{money(lastBalance)}</Text></View>
         <View style={styles.pair}><Text style={{ fontSize: 11, color: palette.textMuted }}>{t('finance.inflow')}: {money(cashIn)}</Text><Text style={{ fontSize: 11, color: palette.textMuted }}>{t('finance.outflow')}: {money(cashOut)}</Text></View>
@@ -338,6 +349,7 @@ function BooksSection({ refreshing }: { refreshing: boolean }) {
 function VouchersSection({ refreshing }: { refreshing: boolean }) {
   const { palette } = useTheme();
   const { t } = useI18n();
+  const { samplesFor } = useSamples();
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -345,10 +357,10 @@ function VouchersSection({ refreshing }: { refreshing: boolean }) {
 
   const load = useCallback(async () => {
     setLoading(true); setError(null);
-    try { setRows(await loadList('vouchers', { pageSize: 100 })); }
+    try { const rows = await loadList('vouchers', { pageSize: 100 }); setRows(rows.length ? rows : (samplesFor('finance.voucher', 3) as Row[])); }
     catch (err) { setError(errorMessage(err)); }
     finally { setLoading(false); }
-  }, []);
+  }, [samplesFor]);
   useEffect(() => { void load(); }, [load, rkey]);
 
   const statusColor = (s: string) => s === 'approved' ? palette.primary : s === 'draft' ? palette.textMuted : palette.border;
@@ -369,9 +381,11 @@ function VouchersSection({ refreshing }: { refreshing: boolean }) {
 
   return (
     <SectionWrap refreshing={refreshing} onRefresh={load}>
+      {rows.some((r) => (r as Row & { __sample?: boolean }).__sample === true) ? <SampleBanner /> : null}
       {rows.length === 0 ? <Text style={styles.empty}>{t('finance.noEntries')}</Text> :
         rows.map((r) => (
           <View key={r.id} style={styles.card}>
+            {r.__sample === true ? <SampleBadge /> : null}
             <View style={styles.top}>
               <Text style={styles.num}>{String(r.voucherNumber ?? '—')}</Text>
               <Text style={[styles.status, { backgroundColor: statusColor(String(r.status ?? 'draft')), color: palette.textInverse }]}>{String(r.status ?? 'draft').toUpperCase()}</Text>
@@ -389,6 +403,7 @@ function VouchersSection({ refreshing }: { refreshing: boolean }) {
 function DonationsSection({ refreshing }: { refreshing: boolean }) {
   const { palette } = useTheme();
   const { t } = useI18n();
+  const { samplesFor } = useSamples();
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -396,10 +411,10 @@ function DonationsSection({ refreshing }: { refreshing: boolean }) {
 
   const load = useCallback(async () => {
     setLoading(true); setError(null);
-    try { setRows(await loadList('donations', { pageSize: 100 })); }
+    try { const rows = await loadList('donations', { pageSize: 100 }); setRows(rows.length ? rows : (samplesFor('finance.donation', 3) as Row[])); }
     catch (err) { setError(errorMessage(err)); }
     finally { setLoading(false); }
-  }, []);
+  }, [samplesFor]);
   useEffect(() => { void load(); }, [load, rkey]);
 
   const total = useMemo(() => rows.reduce((s, r) => s + asNum(r.amount), 0), [rows]);
@@ -425,6 +440,7 @@ function DonationsSection({ refreshing }: { refreshing: boolean }) {
 
   return (
     <SectionWrap refreshing={refreshing} onRefresh={load}>
+      {rows.some((r) => (r as Row & { __sample?: boolean }).__sample === true) ? <SampleBanner /> : null}
       <View style={styles.summary}>
         <View style={styles.sumCard}><Text style={styles.sumL}>{t('finance.totalDonations')}</Text><Text style={styles.sumV}>{money(total)}</Text></View>
         <View style={styles.sumCard}><Text style={styles.sumL}>{t('finance.donationsCount')}</Text><Text style={styles.sumV}>{rows.length}</Text></View>
@@ -451,6 +467,7 @@ function DonationsSection({ refreshing }: { refreshing: boolean }) {
 function BudgetsSection({ refreshing }: { refreshing: boolean }) {
   const { palette } = useTheme();
   const { t } = useI18n();
+  const { samplesFor } = useSamples();
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -458,10 +475,10 @@ function BudgetsSection({ refreshing }: { refreshing: boolean }) {
 
   const load = useCallback(async () => {
     setLoading(true); setError(null);
-    try { setRows(await loadList('budgets', { pageSize: 100 })); }
+    try { const rows = await loadList('budgets', { pageSize: 100 }); setRows(rows.length ? rows : (samplesFor('finance.budget', 3) as Row[])); }
     catch (err) { setError(errorMessage(err)); }
     finally { setLoading(false); }
-  }, []);
+  }, [samplesFor]);
   useEffect(() => { void load(); }, [load, rkey]);
 
   if (loading) return <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}><ActivityIndicator size="large" color={palette.primary} /></View>;
@@ -484,6 +501,7 @@ function BudgetsSection({ refreshing }: { refreshing: boolean }) {
 
   return (
     <SectionWrap refreshing={refreshing} onRefresh={load}>
+      {rows.some((r) => (r as Row & { __sample?: boolean }).__sample === true) ? <SampleBanner /> : null}
       {rows.length === 0 ? <Text style={styles.empty}>{t('finance.noEntries')}</Text> :
         rows.map((r) => {
           const allocated = asNum(r.allocated);

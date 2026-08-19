@@ -1,9 +1,11 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Platform } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, ScrollView } from 'react-native';
 import { api, errorMessage } from '../../src/api/client';
 import { spacing, radii } from '../../src/config/theme';
 import { useTheme } from '../../src/config/ThemeContext';
 import { useI18n } from '../../src/i18n';
+import { useSamples } from '../../src/sample/SampleContext';
+import { ScreenHeader, EmptyState, SampleBadge, SampleBanner, KeyValueRow } from '../../src/components/ui';
 
 interface ReportMeta {
   key: string;
@@ -35,37 +37,42 @@ const REPORTS: ReportMeta[] = [
   { key: 'audits', endpoint: '/reports/audits' },
 ];
 
+type Row = Record<string, unknown> & { __sample?: true };
+
 export default function ReportsScreen() {
   const { palette } = useTheme();
   const { t } = useI18n();
+  const { withSamples } = useSamples();
   const [selected, setSelected] = useState<ReportMeta | null>(null);
   const [data, setData] = useState<unknown>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const styles = useMemo(() => StyleSheet.create({
-    container: { flex: 1, flexDirection: 'row', backgroundColor: palette.background },
-    sidebar: { width: 180, backgroundColor: palette.surface, borderRightWidth: 1, borderRightColor: palette.border },
-    heading: { fontSize: 16, fontWeight: '700', color: palette.primaryDark, padding: spacing.md },
-    reportItem: { padding: spacing.md, borderBottomWidth: 1, borderBottomColor: palette.border },
-    reportItemActive: { backgroundColor: palette.secondary },
-    reportText: { fontSize: 13, fontWeight: '600', color: palette.text },
-    reportSub: { fontSize: 11, color: palette.textMuted, marginTop: spacing.xs },
-    reportTextActive: { color: palette.primaryDark },
-    content: { flex: 1, padding: spacing.md },
-    contentTitle: { fontSize: 16, fontWeight: '700', color: palette.primaryDark, marginBottom: spacing.md },
-    recordCard: { backgroundColor: palette.surface, borderRadius: radii.md, padding: spacing.md, marginBottom: spacing.md, borderWidth: 1, borderColor: palette.border },
-    recordRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: spacing.xs, borderBottomWidth: 1, borderBottomColor: palette.border },
-    recordKey: { fontSize: 12, color: palette.textMuted, flex: 1 },
-    recordValue: { fontSize: 12, color: palette.text, fontWeight: '600', flex: 1, textAlign: 'right' },
-    empty: { textAlign: 'center', color: palette.textMuted, marginTop: spacing.xl },
+    container: { flex: 1, backgroundColor: palette.background },
+    center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: palette.background },
+    grid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: spacing.md, gap: spacing.sm },
+    reportCard: { flexBasis: '47%', flexGrow: 1, backgroundColor: palette.surface, borderRadius: radii.md, borderWidth: 1, borderColor: palette.border, padding: spacing.lg, marginBottom: spacing.xs },
+    reportCardActive: { borderColor: palette.primary, backgroundColor: palette.secondary },
+    monogram: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.sm },
+    monogramText: { fontSize: 16, fontWeight: '800', color: palette.textInverse },
+    reportLabel: { fontSize: 14, fontWeight: '700', color: palette.text },
+    reportHint: { fontSize: 11, color: palette.textMuted, marginTop: 2 },
+    detailHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: spacing.md, paddingTop: spacing.sm },
+    backBtn: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, borderWidth: 1, borderColor: palette.border, borderRadius: radii.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, backgroundColor: palette.surface },
+    backText: { color: palette.primary, fontWeight: '600', fontSize: 12 },
+    detailTitle: { fontSize: 17, fontWeight: '700', color: palette.primaryDark, flex: 1 },
+    recordCard: { backgroundColor: palette.surface, borderRadius: radii.md, padding: spacing.md, marginBottom: spacing.sm, borderWidth: 1, borderColor: palette.border },
     error: { color: palette.error, textAlign: 'center', marginTop: spacing.xl },
+    empty: { color: palette.textMuted, textAlign: 'center', marginTop: spacing.xl },
+    countPill: { fontSize: 11, color: palette.primary, fontWeight: '700' },
   }), [palette]);
 
   async function loadReport(meta: ReportMeta) {
     setSelected(meta);
     setLoading(true);
     setError(null);
+    setData(null);
     try {
       const res = await api.get(meta.endpoint);
       setData((res.data as { data: unknown }).data);
@@ -85,72 +92,100 @@ export default function ReportsScreen() {
     return JSON.stringify(v).slice(0, 80);
   }
 
-  function renderData() {
-    if (loading) return <ActivityIndicator size="large" color={palette.primary} />;
-    if (error) return <Text style={styles.error}>{error}</Text>;
-    if (!data) return <Text style={styles.empty}>{t('reports.selectReport')}</Text>;
+  function formatKey(k: string): string {
+    return k
+      .replace(/([A-Z])/g, ' $1')
+      .replace(/[_-]+/g, ' ')
+      .replace(/^\w/, (c) => c.toUpperCase());
+  }
 
-    if (Array.isArray(data)) {
-      return (
-        <FlatList
-          data={data}
-          keyExtractor={(_, i) => String(i)}
-          ListEmptyComponent={<Text style={styles.empty}>{t('reports.noRecords')}</Text>}
-          renderItem={({ item }) => (
-            <View style={styles.recordCard}>
-              {Object.entries(item as Record<string, unknown>).map(([k, v]) => (
-                <View key={k} style={styles.recordRow}>
-                  <Text style={styles.recordKey}>{k}</Text>
-                  <Text style={styles.recordValue}>{renderValue(v)}</Text>
-                </View>
+  function renderRecords(records: Row[]) {
+    return (
+      <>
+        {records.length === 0 ? (
+          <EmptyState message={t('reports.noRecords')} />
+        ) : (
+          records.map((item) => (
+            <View key={item.id as string} style={styles.recordCard}>
+              {item.__sample ? <SampleBadge /> : null}
+              {Object.entries(item).filter(([k]) => k !== '__sample' && k !== 'id').map(([k, v], idx, arr) => (
+                <KeyValueRow key={k} label={formatKey(k)} value={renderValue(v)} last={idx === arr.length - 1} />
               ))}
             </View>
-          )}
-        />
-      );
-    }
-
-    return (
-      <View style={styles.recordCard}>
-        {Object.entries(data as Record<string, unknown>).map(([k, v]) => (
-          <View key={k} style={styles.recordRow}>
-            <Text style={styles.recordKey}>{k}</Text>
-            <Text style={styles.recordValue}>{renderValue(v)}</Text>
-          </View>
-        ))}
-      </View>
+          ))
+        )}
+      </>
     );
   }
 
-  const selectedLabel = selected ? t(`reports.${selected.key}`) : t('reports.selectReport');
+  function renderData() {
+    if (loading) return <View style={styles.center}><ActivityIndicator size="large" color={palette.primary} /></View>;
+    if (error) return <Text style={styles.error}>{error}</Text>;
 
-  return (
-    <View style={styles.container}>
-      <View style={styles.sidebar}>
-        <Text style={styles.heading}>{t('reports.title')}</Text>
+    const shown: Row[] = withSamples((Array.isArray(data) ? data : []) as Row[], `reports.${selected?.key ?? ''}`, 3);
+    if (Array.isArray(data)) {
+      return renderRecords(shown);
+    }
+    if (data && typeof data === 'object') {
+      return (
+        <View style={styles.recordCard}>
+          {Object.entries(data as Record<string, unknown>).map(([k, v]) => (
+            <KeyValueRow key={k} label={formatKey(k)} value={renderValue(v)} />
+          ))}
+        </View>
+      );
+    }
+    return <EmptyState message={t('reports.selectReport')} />;
+  }
+
+  if (!selected) {
+    return (
+      <View style={styles.container}>
+        <ScreenHeader title={t('reports.title')} subtitle={t('reports.selectReport')} />
         <FlatList
           data={REPORTS}
           keyExtractor={(r) => r.key}
-          contentContainerStyle={{ padding: spacing.sm }}
+          numColumns={2}
+          columnWrapperStyle={{ gap: spacing.sm, paddingHorizontal: spacing.md }}
+          contentContainerStyle={{ gap: spacing.sm, paddingBottom: spacing.xxl }}
           renderItem={({ item }) => {
             const label = t(`reports.${item.key}`);
             return (
               <TouchableOpacity
-                style={[styles.reportItem, selected?.key === item.key && styles.reportItemActive]}
+                style={[styles.reportCard, { flexBasis: '47%', flexGrow: 1 }]}
                 onPress={() => void loadReport(item)}
+                activeOpacity={0.8}
               >
-                <Text style={[styles.reportText, selected?.key === item.key && styles.reportTextActive]}>
-                  {label}
-                </Text>
+                <View style={[styles.monogram, { backgroundColor: palette.primary }]}>
+                  <Text style={styles.monogramText}>{label.charAt(0).toUpperCase()}</Text>
+                </View>
+                <Text style={styles.reportLabel}>{label}</Text>
+                <Text style={styles.reportHint}>{item.endpoint.replace('/reports/', '')}</Text>
               </TouchableOpacity>
             );
           }}
         />
       </View>
-      <View style={styles.content}>
-        <Text style={styles.contentTitle}>{selectedLabel}</Text>
-        {renderData()}
+    );
+  }
+
+  const recordCount = Array.isArray(data) ? (data as Row[]).length : 0;
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.detailHeader}>
+        <TouchableOpacity style={styles.backBtn} onPress={() => setSelected(null)} activeOpacity={0.7}>
+          <Text style={styles.backText}>‹ {t('reports.back')}</Text>
+        </TouchableOpacity>
+        <Text style={styles.detailTitle} numberOfLines={1}>{t(`reports.${selected.key}`)}</Text>
       </View>
+      {!loading && !error && recordCount === 0 && Array.isArray(data) ? <SampleBanner /> : null}
+      <ScrollView contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl }}>
+        {!loading && !error && Array.isArray(data) && recordCount > 0 ? (
+          <Text style={styles.countPill}>{recordCount} {t('reports.items')}</Text>
+        ) : null}
+        {renderData()}
+      </ScrollView>
     </View>
   );
 }
