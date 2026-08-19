@@ -1,8 +1,10 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { model as mongooseModel, type Document } from 'mongoose';
+import { randomUUID } from 'node:crypto';
 import SchemaRegisterRepository, { type SRegEntryRow } from '../repository/schema-register.repository.js';
 import { ForbiddenError, NotFoundError, ValidationError } from '../../../kernel/errors/app-error.js';
 import { assertTenantWriteAccess, resolvedTenantId } from '../../../plugins/tenant.plugin.js';
+import { getStorageDriver } from '../../../services/storage.service.js';
 import { InstitutionModel } from '../../tenant/entity/institution.entity.js';
 import { MasterDataModel } from '../../master-data/entity/master-data.entity.js';
 import {
@@ -57,6 +59,10 @@ function escapeCsv(v: unknown): string {
 
 function escapeXml(v: unknown): string {
   return String(v ?? '').replace(/[<>&]/g, (m) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' })[m] as string);
+}
+
+function withDocumentUrls(row: SRegEntryRow): SRegEntryRow {
+  return { ...row, documents: (row.documents ?? []).map((k) => `/schema-register/media?key=${encodeURIComponent(k)}`) };
 }
 
 export class SchemaRegisterService {
@@ -222,7 +228,8 @@ export class SchemaRegisterService {
     if (to) filter.to = to;
     if (query.status) filter.status = String(query.status);
     if (query.search) filter.search = String(query.search);
-    return this.repo.list(tenantIds, code, filter, page, pageSize);
+    const result = await this.repo.list(tenantIds, code, filter, page, pageSize);
+    return { ...result, items: result.items.map(withDocumentUrls) };
   }
 
   async getById(req: FastifyRequest, codeRaw: string, id: string): Promise<SRegEntryRow> {
@@ -230,7 +237,7 @@ export class SchemaRegisterService {
     const tenantIds = await this.scopedTenantIds(req);
     const row = await this.repo.findByIds(tenantIds, code, id);
     if (!row) throw new NotFoundError('register entry not found');
-    return row;
+    return withDocumentUrls(row);
   }
 
   async createDraft(req: FastifyRequest, codeRaw: string, body: Record<string, unknown>): Promise<SRegEntryRow> {
@@ -252,7 +259,7 @@ export class SchemaRegisterService {
         values[col.key] = this.coerceValue(col, v);
       }
     }
-    return this.repo.create({
+    return withDocumentUrls(await this.repo.create({
       tenantId,
       code,
       entryNumber,
@@ -263,7 +270,7 @@ export class SchemaRegisterService {
       signatures,
       remarks: String(body.remarks ?? '').trim(),
       createdBy: req.sessionUser!.userId,
-    });
+    }));
   }
 
   async updateDraft(req: FastifyRequest, codeRaw: string, id: string, body: Record<string, unknown>): Promise<SRegEntryRow> {
@@ -291,7 +298,7 @@ export class SchemaRegisterService {
     if ('remarks' in body) set.remarks = String(body.remarks ?? '').trim();
     const updated = await this.repo.update(tenantId, code, id, set);
     if (!updated) throw new NotFoundError('register entry not found');
-    return updated;
+    return withDocumentUrls(updated);
   }
 
   async submit(app: FastifyInstance, req: FastifyRequest, codeRaw: string, id: string): Promise<SRegEntryRow> {
@@ -311,6 +318,10 @@ export class SchemaRegisterService {
         throw new ValidationError(`signature for ${col.en} is required before submission`);
       }
     }
+    const requiresSourceDoc = columns.some((c) => c.sourceFlag);
+    if (requiresSourceDoc && existing.documents.length === 0) {
+      throw new ValidationError('document proof is required before submission for source-verified entries');
+    }
     const updated = await this.repo.update(tenantId, code, id, {
       status: 'SUBMITTED',
       submittedBy: req.sessionUser!.userId,
@@ -319,7 +330,7 @@ export class SchemaRegisterService {
     if (!updated) throw new NotFoundError('register entry not found');
     await app.auditHook(req, 'submit', 'schema-register', id);
     app.io?.of('/registers').to(`tenant:${tenantId}`).emit('register:changed', { register: code, action: 'submitted', entryId: id });
-    return updated;
+    return withDocumentUrls(updated);
   }
 
   async review(app: FastifyInstance, req: FastifyRequest, codeRaw: string, id: string): Promise<SRegEntryRow> {
@@ -339,7 +350,7 @@ export class SchemaRegisterService {
     if (!updated) throw new NotFoundError('register entry not found');
     await app.auditHook(req, 'finalize', 'schema-register', id);
     app.io?.of('/registers').to(`tenant:${tenantId}`).emit('register:changed', { register: code, action: 'finalized', entryId: id });
-    return updated;
+    return withDocumentUrls(updated);
   }
 
   async correct(req: FastifyRequest, codeRaw: string, id: string, body: Record<string, unknown>): Promise<SRegEntryRow> {
@@ -390,7 +401,7 @@ export class SchemaRegisterService {
     if (col?.type === 'signature') set.signatures = signatures;
     const updated = await this.repo.update(tenantId, code, id, set);
     if (!updated) throw new NotFoundError('register entry not found');
-    return updated;
+    return withDocumentUrls(updated);
   }
 
   private async exportColumns(req: FastifyRequest, codeRaw: string): Promise<SRegColumn[]> {
@@ -488,6 +499,47 @@ export class SchemaRegisterService {
       </body></html>
     `;
     return { html };
+  }
+
+  async attachDocument(app: FastifyInstance, req: FastifyRequest, codeRaw: string, id: string): Promise<SRegEntryRow> {
+    const code = this.normalizeCode(codeRaw);
+    const tenantId = assertTenantWriteAccess(req);
+    if (!this.canWrite(req)) throw new ForbiddenError('write access denied');
+    const existing = await this.repo.findById(tenantId, code, id);
+    if (!existing) throw new NotFoundError('register entry not found');
+    if (existing.status !== 'DRAFT') throw new ValidationError('documents can only be attached to draft entries');
+    const file = await req.file();
+    if (!file) throw new ValidationError('file required');
+    const allowed = new Set(['image/jpeg', 'image/png', 'application/pdf']);
+    if (!allowed.has(file.mimetype)) throw new ValidationError('only PNG, JPEG or PDF documents are allowed');
+    const buffer = await file.toBuffer();
+    const storageKey = `${tenantId}/schema-register/${randomUUID()}/${file.filename}`;
+    const driver = getStorageDriver();
+    const info = await driver.putObject({ key: storageKey, body: buffer, contentType: file.mimetype, contentLength: buffer.length });
+    const updated = await this.repo.pushDocument(tenantId, code, id, storageKey);
+    if (!updated) throw new NotFoundError('register entry not found');
+    await app.auditHook(req, 'update', 'schema-register', id);
+    app.io?.of('/registers').to(`tenant:${tenantId}`).emit('register:changed', { register: code, action: 'document-attached', entryId: id, size: info.size });
+    return withDocumentUrls(updated);
+  }
+
+  async serveDocument(req: FastifyRequest, key: string): Promise<{ buffer: Buffer; contentType: string }> {
+    if (!key) throw new ValidationError('key required');
+    const tenantId = resolvedTenantId(req);
+    if (!tenantId || !key.startsWith(`${tenantId}/schema-register/`)) throw new ForbiddenError('media access denied');
+    const driver = getStorageDriver();
+    let obj;
+    try {
+      obj = await driver.getObject(key);
+    } catch {
+      throw new NotFoundError('document not found');
+    }
+    const { body, info } = obj;
+    const chunks: Buffer[] = [];
+    for await (const chunk of body) {
+      chunks.push(chunk as Buffer);
+    }
+    return { buffer: Buffer.concat(chunks), contentType: info.contentType || 'application/octet-stream' };
   }
 
   async history(req: FastifyRequest, codeRaw: string, id: string): Promise<{ audit: unknown[]; row: SRegEntryRow }> {

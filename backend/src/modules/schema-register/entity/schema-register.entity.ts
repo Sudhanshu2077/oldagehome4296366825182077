@@ -67,6 +67,7 @@ const SchemaRegisterEntrySchema = new Schema(
     month: { type: String, default: '' },
     values: { type: Map, of: Schema.Types.Mixed, default: {} },
     signatures: { type: Map, of: String, default: {} },
+    documents: { type: [String], default: [] },
     remarks: { type: String, default: '' },
     createdBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
     updatedBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },

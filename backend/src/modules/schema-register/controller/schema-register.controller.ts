@@ -71,6 +71,20 @@ export class SchemaRegisterController {
       reply.send(ok(row));
     });
 
+    app.post('/schema-register/:code/:id/documents', { preHandler: writeGuard }, async (req, reply) => {
+      const { code, id } = req.params as { code: string; id: string };
+      const row = await this.service.attachDocument(app, req, code, id);
+      reply.code(201).send(ok(row));
+    });
+
+    app.get('/schema-register/media', { preHandler: readGuard }, async (req, reply) => {
+      const key = String((req.query as { key?: string }).key ?? '');
+      const buf = await this.service.serveDocument(req, key);
+      reply.header('Content-Type', buf.contentType);
+      reply.header('Content-Length', buf.buffer.length);
+      reply.send(buf.buffer);
+    });
+
     app.get('/schema-register/:code/export/csv', { preHandler: readGuard }, async (req, reply) => {
       const { code } = req.params as { code: string };
       const csv = await this.service.exportCsv(req, code);

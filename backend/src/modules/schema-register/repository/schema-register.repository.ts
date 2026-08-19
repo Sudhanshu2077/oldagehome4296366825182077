@@ -11,6 +11,7 @@ export interface SRegEntryRow {
   month: string;
   values: Record<string, unknown>;
   signatures: Record<string, string>;
+  documents: string[];
   remarks: string;
   createdBy: string | null;
   submittedBy: string | null;
@@ -56,6 +57,7 @@ export function toSRegEntryRow(doc: SchemaRegisterEntryDoc): SRegEntryRow {
     month: doc.month ?? '',
     values: mapToRecord(doc.values),
     signatures: mapToRecord(doc.signatures) as Record<string, string>,
+    documents: doc.documents ?? [],
     remarks: doc.remarks ?? '',
     createdBy: doc.createdBy ? doc.createdBy.toString() : null,
     submittedBy: doc.submittedBy ? doc.submittedBy.toString() : null,
@@ -134,6 +136,15 @@ export class SchemaRegisterRepository {
     const doc = await SchemaRegisterEntryModel.findOneAndUpdate(
       { _id: id, tenantId: toObjectId(tenantId), code, deletedAt: null },
       { $set: set },
+      { new: true },
+    ).lean();
+    return doc ? toSRegEntryRow(doc as unknown as SchemaRegisterEntryDoc) : null;
+  }
+
+  async pushDocument(tenantId: string, code: SRegCode, id: string, storageKey: string): Promise<SRegEntryRow | null> {
+    const doc = await SchemaRegisterEntryModel.findOneAndUpdate(
+      { _id: id, tenantId: toObjectId(tenantId), code, deletedAt: null },
+      { $push: { documents: storageKey } },
       { new: true },
     ).lean();
     return doc ? toSRegEntryRow(doc as unknown as SchemaRegisterEntryDoc) : null;

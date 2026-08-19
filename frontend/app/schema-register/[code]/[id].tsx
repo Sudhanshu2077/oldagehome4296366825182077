@@ -1,9 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, TextInput, Modal, Platform,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, TextInput, Modal, Platform, Image,
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { api, errorMessage } from '../../../src/api/client';
+import { tokenStorage } from '../../../src/api/storage';
+import { API_BASE_URL } from '../../../src/config/env';
 import { useAuth } from '../../../src/auth/AuthContext';
 import { spacing, radii } from '../../../src/config/theme';
 import { useTheme } from '../../../src/config/ThemeContext';
@@ -28,6 +30,7 @@ interface SRegEntry {
   month: string;
   values: Record<string, unknown>;
   signatures: Record<string, string>;
+  documents: string[];
   remarks: string;
   submittedAt: string | null;
   finalizedAt: string | null;
@@ -56,9 +59,44 @@ export default function SchemaRegisterDetailScreen() {
   const [corrField, setCorrField] = useState('remarks');
   const [corrValue, setCorrValue] = useState('');
   const [corrReason, setCorrReason] = useState('');
+  const [uploading, setUploading] = useState(false);
 
   const canWrite = user?.tier === 'institution' && (user?.role === 'assistant-manager' || user?.role === 'department-user');
   const canReview = user?.tier === 'institution' && (user?.role === 'institution-head' || user?.role === 'assistant-manager');
+  const needsDocument = useMemo(() => columns.some((c) => c.sourceFlag), [columns]);
+
+  function pickImages() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/png,image/jpeg,application/pdf';
+    input.multiple = true;
+    input.onchange = () => {
+      const files = input.files ? Array.from(input.files) : [];
+      void attachDocuments(files);
+    };
+    input.click();
+  }
+
+  async function attachDocuments(files: File[]) {
+    setUploading(true);
+    setError(null);
+    try {
+      const token = await tokenStorage.getItem('accessToken');
+      for (const file of files) {
+        const fd = new FormData();
+        fd.append('file', file);
+        const headers: Record<string, string> = {};
+        if (token) headers.Authorization = `Bearer ${token}`;
+        const res = await fetch(`${API_BASE_URL}/schema-register/${code}/${id}/documents`, { method: 'POST', headers, body: fd });
+        if (!res.ok) throw new Error('document upload failed');
+      }
+      await load();
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setUploading(false);
+    }
+  }
 
   const styles = useMemo(() => StyleSheet.create({
     container: { flex: 1, backgroundColor: palette.background },
@@ -96,6 +134,10 @@ export default function SchemaRegisterDetailScreen() {
     saveButton: { backgroundColor: palette.primary, borderRadius: radii.sm, paddingHorizontal: spacing.xl, paddingVertical: spacing.md },
     saveText: { color: palette.textInverse, fontWeight: '600' },
     auditRow: { marginBottom: spacing.md, borderLeftWidth: 2, borderLeftColor: palette.border, paddingLeft: spacing.md },
+    docRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.sm },
+    docImage: { width: 96, height: 96, borderRadius: radii.md, borderWidth: 1, borderColor: palette.border },
+    attachBtn: { borderWidth: 1, borderColor: palette.primary, borderRadius: radii.md, paddingVertical: spacing.md, alignItems: 'center', backgroundColor: palette.backgroundSoft },
+    attachText: { color: palette.primary, fontWeight: '600', fontSize: 13 },
   }), [palette]);
 
   const load = useCallback(async () => {
@@ -200,6 +242,24 @@ export default function SchemaRegisterDetailScreen() {
           <View style={styles.fieldRow}><Text style={styles.fieldLabel}>{t('sreg.remarks')}</Text><Text style={styles.fieldValue}>{row.remarks || '—'}</Text></View>
           <View style={styles.fieldRow}><Text style={styles.fieldLabel}>{t('sreg.submittedAt')}</Text><Text style={styles.fieldValue}>{row.submittedAt ? String(row.submittedAt).slice(0, 19) : '—'}</Text></View>
           <View style={styles.fieldRow}><Text style={styles.fieldLabel}>{t('sreg.finalizedAt')}</Text><Text style={styles.fieldValue}>{row.finalizedAt ? String(row.finalizedAt).slice(0, 19) : '—'}</Text></View>
+          <View style={{ marginTop: spacing.md }}>
+            <Text style={styles.fieldLabel}>{t('sreg.documents')}</Text>
+            {needsDocument ? <Text style={styles.sourceFlag}>{t('sreg.documentProofRequired')}</Text> : null}
+            {row.documents.length > 0 ? (
+              <View style={styles.docRow}>
+                {row.documents.map((d, i) => (
+                  <SRegDocument key={i} url={d} />
+                ))}
+              </View>
+            ) : (
+              <Text style={styles.note}>{t('sreg.listEmpty')}</Text>
+            )}
+            {canWrite && row.status === 'DRAFT' ? (
+              <TouchableOpacity style={styles.attachBtn} onPress={pickImages} disabled={uploading} activeOpacity={0.7}>
+                {uploading ? <ActivityIndicator color={palette.primary} /> : <Text style={styles.attachText}>{t('sreg.attachDocument')}</Text>}
+              </TouchableOpacity>
+            ) : null}
+          </View>
         </View>
 
         {canWrite && row.status === 'DRAFT' ? (
@@ -278,3 +338,44 @@ export default function SchemaRegisterDetailScreen() {
     </View>
   );
 }
+
+function SRegDocument({ url }: { url: string }) {
+  const { palette } = useTheme();
+  const [src, setSrc] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const token = await tokenStorage.getItem('accessToken');
+        const headers: Record<string, string> = {};
+        if (token) headers.Authorization = `Bearer ${token}`;
+        const res = await fetch(`${API_BASE_URL}${url}`, { headers });
+        if (!res.ok) throw new Error('document fetch failed');
+        const blob = await res.blob();
+        if (cancelled) return;
+        setSrc(URL.createObjectURL(blob));
+      } catch {
+        if (!cancelled) setFailed(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [url]);
+
+  if (failed) return null;
+  if (!src) {
+    return (
+      <View style={[stylesPlaceholder.docImage, { backgroundColor: palette.surfaceAlt, alignItems: 'center', justifyContent: 'center' }]}>
+        <ActivityIndicator size="small" color={palette.primary} />
+      </View>
+    );
+  }
+  return <Image source={{ uri: src }} style={stylesPlaceholder.docImage} />;
+}
+
+const stylesPlaceholder = StyleSheet.create({
+  docImage: { width: 96, height: 96, borderRadius: 14, borderWidth: 1 },
+});
