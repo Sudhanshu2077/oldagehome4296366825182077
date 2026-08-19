@@ -93,7 +93,13 @@ const eventsModule = async (app: FastifyInstance): Promise<void> => {
     const tenantId = resolvedTenantId(req);
     if (!tenantId || !key.startsWith(`${tenantId}/events/`)) throw new ForbiddenError('media access denied');
     const driver = getStorageDriver();
-    const { body, info } = await driver.getObject(key);
+    let obj;
+    try {
+      obj = await driver.getObject(key);
+    } catch {
+      throw new NotFoundError('event media not found');
+    }
+    const { body, info } = obj;
     const chunks: Buffer[] = [];
     for await (const chunk of body) {
       chunks.push(chunk as Buffer);

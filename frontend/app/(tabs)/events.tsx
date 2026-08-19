@@ -438,6 +438,7 @@ export default function EventsScreen() {
 function EventImage({ url }: { url: string }) {
   const { palette } = useTheme();
   const [src, setSrc] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -452,7 +453,7 @@ function EventImage({ url }: { url: string }) {
         if (cancelled) return;
         setSrc(URL.createObjectURL(blob));
       } catch {
-        if (!cancelled) setSrc(null);
+        if (!cancelled) setFailed(true);
       }
     })();
     return () => {
@@ -460,6 +461,7 @@ function EventImage({ url }: { url: string }) {
     };
   }, [url]);
 
+  if (failed) return null;
   if (!src) {
     return (
       <View style={[stylesPlaceholder.image, { backgroundColor: palette.surfaceAlt }]}>
